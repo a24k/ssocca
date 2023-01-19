@@ -1,0 +1,9 @@
+[package]
+name = "ssocca"
+version = "0.0.2"
+edition = "2021"
+license = "MIT"
+authors = ["Atsushi KAWASAKI <ak@xlix.org>"]
+description = "SSO Credential Cookie Acquirer"
+
+[dependencies]
