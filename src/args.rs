@@ -16,7 +16,7 @@ mod tests {
     use super::Args;
 
     #[test]
-    fn verify_args() {
+    fn verify() {
         use clap::CommandFactory;
         Args::command().debug_assert()
     }
