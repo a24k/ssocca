@@ -16,5 +16,5 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     thread::sleep(time::Duration::from_millis(3000));
 
-    Ok(())
+    acquirer.dump()
 }

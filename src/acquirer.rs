@@ -24,4 +24,14 @@ impl Acquirer {
         self.tab.navigate_to(url)?;
         Ok(())
     }
+
+    pub fn dump(&self) -> Result<(), Box<dyn Error>> {
+        let cookies = self.tab.get_cookies()?;
+
+        cookies.iter().for_each(|cookie| {
+            println!("{}={}; Domain={}", cookie.name, cookie.value, cookie.domain);
+        });
+
+        Ok(())
+    }
 }
