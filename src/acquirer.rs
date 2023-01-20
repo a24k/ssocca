@@ -1,4 +1,3 @@
-use std::error::Error;
 use std::sync::Arc;
 
 use headless_chrome::{Browser, LaunchOptions, Tab};
@@ -9,7 +8,7 @@ pub struct Acquirer {
 }
 
 impl Acquirer {
-    pub fn launch(headless: bool) -> Result<Acquirer, Box<dyn Error>> {
+    pub fn launch(headless: bool) -> anyhow::Result<Acquirer> {
         let browser = Browser::new(LaunchOptions {
             headless,
             ..Default::default()
@@ -20,12 +19,12 @@ impl Acquirer {
         Ok(Acquirer { browser, tab })
     }
 
-    pub fn navigate(&self, url: &str) -> Result<(), Box<dyn Error>> {
+    pub fn navigate(&self, url: &str) -> anyhow::Result<()> {
         self.tab.navigate_to(url)?;
         Ok(())
     }
 
-    pub fn dump(&self) -> Result<(), Box<dyn Error>> {
+    pub fn dump(&self) -> anyhow::Result<()> {
         let cookies = self.tab.get_cookies()?;
 
         cookies.iter().for_each(|cookie| {

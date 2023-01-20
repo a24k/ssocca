@@ -1,13 +1,12 @@
 mod acquirer;
 mod args;
 
-use std::error::Error;
 use std::{thread, time};
 
 use acquirer::Acquirer;
 use args::{Args, Parser};
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     let acquirer = Acquirer::launch(args.headless)?;
