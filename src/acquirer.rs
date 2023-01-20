@@ -48,3 +48,21 @@ impl Acquirer {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use rstest::*;
+
+    use super::Acquirer;
+
+    #[rstest]
+    #[case("https://github.com")]
+    #[should_panic(expected = "Failed to navigate url")]
+    #[case("nowhere")]
+    #[should_panic(expected = "Failed to navigate url")]
+    #[case("https://nowhere.local")]
+    fn navigate(#[case] url: &str) {
+        let acquirer = Acquirer::launch(true).unwrap();
+        acquirer.navigate(url).unwrap();
+    }
+}
