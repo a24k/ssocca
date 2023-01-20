@@ -3,22 +3,25 @@ use std::sync::Arc;
 
 use headless_chrome::{Browser, LaunchOptions, Tab};
 
-use crate::args::Args;
-
 pub struct Acquirer {
     pub browser: Browser,
     pub tab: Arc<Tab>,
 }
 
 impl Acquirer {
-    pub fn launch(args: &Args) -> Result<Acquirer, Box<dyn Error>> {
+    pub fn launch(headless: bool) -> Result<Acquirer, Box<dyn Error>> {
         let browser = Browser::new(LaunchOptions {
-            headless: args.headless,
+            headless,
             ..Default::default()
         })?;
 
         let tab = browser.wait_for_initial_tab()?;
 
         Ok(Acquirer { browser, tab })
+    }
+
+    pub fn navigate(&self, url: &str) -> Result<(), Box<dyn Error>> {
+        self.tab.navigate_to(url)?;
+        Ok(())
     }
 }
