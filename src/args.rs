@@ -5,7 +5,7 @@ pub(super) use clap::Parser;
 pub(super) struct Args {
     /// Use browser in headless mode
     #[arg(short('l'), long, default_value_t = false)]
-    headless: bool,
+    pub headless: bool,
 }
 
 #[cfg(test)]
