@@ -1,11 +1,15 @@
 [package]
 name = "ssocca"
-version = "0.2.0"
+version = "0.3.1"
 edition = "2021"
 license = "MIT"
 authors = ["Atsushi KAWASAKI <ak@xlix.org>"]
 description = "SSO Credential Cookie Acquirer"
 
 [dependencies]
+anyhow = "1.0.68"
 clap = { version = "4.1.1", features = ["derive"] }
 headless_chrome = { git = "https://github.com/atroche/rust-headless-chrome", rev = "4e91d90edee71112ee3729c4a99e3bf0e1a06cbb" }
+
+[dev-dependencies]
+rstest = "0.16.0"
