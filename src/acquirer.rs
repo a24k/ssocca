@@ -27,6 +27,11 @@ impl Acquirer {
         self.tab
             .navigate_to(url)
             .with_context(|| format!("Failed to navigate url = {}", url))?;
+
+        self.tab
+            .wait_until_navigated()
+            .with_context(|| format!("Failed to navigate url = {}", url))?;
+
         Ok(())
     }
 
