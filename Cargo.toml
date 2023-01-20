@@ -1,9 +1,10 @@
 [package]
 name = "ssocca"
-version = "0.0.2"
+version = "0.0.4"
 edition = "2021"
 license = "MIT"
 authors = ["Atsushi KAWASAKI <ak@xlix.org>"]
 description = "SSO Credential Cookie Acquirer"
 
 [dependencies]
+clap = { version = "4.1.1", features = ["derive"] }

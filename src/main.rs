@@ -1,3 +1,9 @@
+mod args;
+
+use args::{Args, Parser};
+
 fn main() {
-    println!("Hello, world!");
+    let args = Args::parse();
+
+    println!("{:?}", args);
 }
