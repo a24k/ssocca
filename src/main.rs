@@ -1,13 +1,15 @@
-mod args;
 mod acquirer;
+mod args;
 
-use args::{Args, Parser};
+use std::error::Error;
+
 use acquirer::Acquirer;
+use args::{Args, Parser};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
-    Acquirer::new(args)?;
+    Acquirer::launch(&args)?;
 
     Ok(())
 }

@@ -1,5 +1,9 @@
+use std::error::Error;
 use std::sync::Arc;
+
 use headless_chrome::{Browser, LaunchOptions, Tab};
+
+use crate::args::Args;
 
 pub struct Acquirer {
     pub browser: Browser,
@@ -7,7 +11,7 @@ pub struct Acquirer {
 }
 
 impl Acquirer {
-    pub fn new(args: super::Args) -> Result<Acquirer, Box<dyn std::error::Error>> {
+    pub fn launch(args: &Args) -> Result<Acquirer, Box<dyn Error>> {
         let browser = Browser::new(LaunchOptions {
             headless: args.headless,
             ..Default::default()
