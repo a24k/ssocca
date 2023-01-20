@@ -1,20 +1,13 @@
 mod args;
+mod acquirer;
 
 use args::{Args, Parser};
-
-use headless_chrome::{Browser, LaunchOptions};
+use acquirer::Acquirer;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
 
-    let browser = Browser::new(LaunchOptions {
-        headless: args.headless,
-        ..Default::default()
-    })?;
-
-    browser.wait_for_initial_tab()?;
-
-    println!("{:?}", args);
+    Acquirer::new(args)?;
 
     Ok(())
 }
