@@ -51,6 +51,14 @@ impl Acquirer {
 
         Ok(())
     }
+
+    pub async fn close(mut self) -> anyhow::Result<()> {
+        self.browser.close().await?;
+
+        self.handle.await;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -66,5 +74,6 @@ mod tests {
     async fn navigate(#[case] url: &str) {
         let acquirer = Acquirer::launch(true).await.unwrap();
         acquirer.navigate(url).await.unwrap();
+        acquirer.close().await.unwrap();
     }
 }
