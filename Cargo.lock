@@ -1236,6 +1236,7 @@ dependencies = [
  "anyhow",
  "chromiumoxide",
  "clap",
+ "futures",
  "headless_chrome",
  "rstest",
 ]
