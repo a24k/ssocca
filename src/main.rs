@@ -1,11 +1,14 @@
 mod acquirer;
 mod args;
 
-use acquirer::Acquirer;
+use acquirer::{Acquirer, AcquirerOxide};
 use args::{Args, Parser};
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
+
+    let _acquirer = AcquirerOxide::launch_oxide().await?;
 
     let acquirer = Acquirer::launch(args.headless)?;
 

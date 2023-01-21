@@ -1,16 +1,37 @@
 use std::sync::Arc;
 
-use anyhow::Context as _;
-use headless_chrome::{Browser, LaunchOptions, Tab};
+use anyhow::{anyhow, Context as _};
+use headless_chrome::{Browser as HChrome, LaunchOptions, Tab};
+
+use chromiumoxide::browser::{Browser, BrowserConfig};
+use chromiumoxide::handler::Handler;
+
+pub struct AcquirerOxide {
+    pub browser: Browser,
+    pub handler: Handler,
+}
+
+impl AcquirerOxide {
+    pub async fn launch_oxide() -> anyhow::Result<AcquirerOxide> {
+        let config = BrowserConfig::builder()
+            .with_head()
+            .build()
+            .map_err(|e| anyhow!(e))?;
+
+        let (browser, handler) = Browser::launch(config).await?;
+
+        Ok(AcquirerOxide { browser, handler })
+    }
+}
 
 pub struct Acquirer {
-    pub browser: Browser,
+    pub browser: HChrome,
     pub tab: Arc<Tab>,
 }
 
 impl Acquirer {
     pub fn launch(headless: bool) -> anyhow::Result<Acquirer> {
-        let browser = Browser::new(LaunchOptions {
+        let browser = HChrome::new(LaunchOptions {
             headless,
             ..Default::default()
         })
