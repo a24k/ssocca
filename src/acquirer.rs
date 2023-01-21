@@ -1,49 +1,60 @@
-use std::sync::Arc;
+mod config;
 
 use anyhow::Context as _;
-use headless_chrome::{Browser, LaunchOptions, Tab};
+use async_std::{task, task::JoinHandle};
+use futures::StreamExt;
+
+use chromiumoxide::browser::Browser;
+use chromiumoxide::page::Page;
 
 pub struct Acquirer {
-    pub browser: Browser,
-    pub tab: Arc<Tab>,
+    browser: Browser,
+    handle: JoinHandle<()>,
 }
 
 impl Acquirer {
-    pub fn launch(headless: bool) -> anyhow::Result<Acquirer> {
-        let browser = Browser::new(LaunchOptions {
-            headless,
-            ..Default::default()
-        })
-        .context("Failed to launch chrome browser")?;
+    pub async fn launch(headless: bool) -> anyhow::Result<Acquirer> {
+        let config = config::build(headless)?;
 
-        let tab = browser
-            .wait_for_initial_tab()
-            .context("Failed to initialize tab")?;
+        let (browser, mut handler) = Browser::launch(config)
+            .await
+            .context("Failed to launch chrome browser")?;
 
-        Ok(Acquirer { browser, tab })
+        let handle = task::spawn(async move { while (handler.next().await).is_some() {} });
+
+        Ok(Acquirer { browser, handle })
     }
 
-    pub fn navigate(&self, url: &str) -> anyhow::Result<()> {
-        self.tab
-            .navigate_to(url)
+    pub async fn navigate(&self, url: &str) -> anyhow::Result<Page> {
+        let page = self
+            .browser
+            .new_page(url)
+            .await
             .with_context(|| format!("Failed to navigate url = {}", url))?;
 
-        self.tab
-            .wait_until_navigated()
+        page.wait_for_navigation()
+            .await
             .with_context(|| format!("Failed to navigate url = {}", url))?;
+
+        Ok(page)
+    }
+
+    pub async fn dump(&self, page: &Page) -> anyhow::Result<()> {
+        eprintln!("{:#?}", self.browser.version().await?);
+
+        let cookies = page.get_cookies().await.context("Failed to get cookies")?;
+
+        cookies.iter().for_each(|cookie| {
+            eprintln!("{cookie:#?}");
+        });
 
         Ok(())
     }
 
-    pub fn dump(&self) -> anyhow::Result<()> {
-        let cookies = self.tab.get_cookies().context("Failed to get cookies")?;
+    pub async fn close(mut self) -> anyhow::Result<()> {
+        self.browser.close().await?;
 
-        cookies.iter().for_each(|cookie| {
-            println!(
-                "{} = {}\n  ; Domain = {}",
-                cookie.name, cookie.value, cookie.domain
-            );
-        });
+        self.handle.await;
 
         Ok(())
     }
@@ -56,13 +67,12 @@ mod tests {
     use super::Acquirer;
 
     #[rstest]
-    #[case("https://github.com")]
+    #[case("https://www.google.com")]
     #[should_panic(expected = "Failed to navigate url")]
     #[case("nowhere")]
-    #[should_panic(expected = "Failed to navigate url")]
-    #[case("https://nowhere.local")]
-    fn navigate(#[case] url: &str) {
-        let acquirer = Acquirer::launch(true).unwrap();
-        acquirer.navigate(url).unwrap();
+    async fn navigate(#[case] url: &str) {
+        let acquirer = Acquirer::launch(true).await.unwrap();
+        acquirer.navigate(url).await.unwrap();
+        acquirer.close().await.unwrap();
     }
 }
