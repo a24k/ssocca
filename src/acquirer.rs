@@ -5,12 +5,11 @@ use async_std::{task, task::JoinHandle};
 use futures::StreamExt;
 
 use chromiumoxide::browser::Browser;
-use chromiumoxide::handler::Handler;
 use chromiumoxide::page::Page;
 
 pub struct Acquirer {
     pub browser: Browser,
-    pub handle: JoinHandle<Handler>,
+    pub handle: JoinHandle<()>,
 }
 
 impl Acquirer {
@@ -21,11 +20,7 @@ impl Acquirer {
             .await
             .context("Failed to launch chrome browser")?;
 
-        let handle = task::spawn(async move {
-            loop {
-                let _ = handler.next().await.unwrap();
-            }
-        });
+        let handle = task::spawn(async move { while (handler.next().await).is_some() {} });
 
         Ok(Acquirer { browser, handle })
     }
