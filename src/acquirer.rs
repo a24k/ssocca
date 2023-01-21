@@ -1,36 +1,21 @@
-use anyhow::{anyhow, Context as _};
-use async_std::task;
+mod config;
+
+use anyhow::Context as _;
+use async_std::{task, task::JoinHandle};
 use futures::StreamExt;
 
-use chromiumoxide::browser::{Browser, BrowserConfig};
-use chromiumoxide::handler::{viewport::Viewport, Handler};
+use chromiumoxide::browser::Browser;
+use chromiumoxide::handler::Handler;
 use chromiumoxide::page::Page;
 
 pub struct Acquirer {
     pub browser: Browser,
-    pub handle: task::JoinHandle<Handler>,
-}
-
-fn build_browser_config(headless: bool) -> anyhow::Result<BrowserConfig> {
-    let viewport = Viewport {
-        width: 0,
-        height: 0,
-        ..Default::default()
-    };
-
-    let builder = BrowserConfig::builder().viewport(viewport);
-    let builder = match headless {
-        true => builder,
-        false => builder.with_head(),
-    };
-
-    builder.build().map_err(|e| anyhow!(e))
+    pub handle: JoinHandle<Handler>,
 }
 
 impl Acquirer {
     pub async fn launch(headless: bool) -> anyhow::Result<Acquirer> {
-        let config =
-            build_browser_config(headless).context("Failed to configure chrome browser")?;
+        let config = config::build(headless)?;
 
         let (browser, mut handler) = Browser::launch(config)
             .await
@@ -80,7 +65,7 @@ mod tests {
     use super::Acquirer;
 
     #[rstest]
-    #[case("https://github.com")]
+    #[case("https://www.google.com")]
     #[should_panic(expected = "Failed to navigate url")]
     #[case("nowhere")]
     async fn navigate(#[case] url: &str) {

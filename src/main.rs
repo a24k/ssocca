@@ -17,10 +17,4 @@ async fn main() -> anyhow::Result<()> {
     //acquirer.handle.await;
 
     Ok(())
-
-    //let acquirer = Acquirer::launch(args.headless)?;
-
-    //acquirer.navigate(&args.url)?;
-
-    //acquirer.dump()
 }
