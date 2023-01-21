@@ -1,5 +1,6 @@
 use anyhow::anyhow;
 use futures::StreamExt;
+use async_std::{task};
 
 use chromiumoxide::browser::{Browser, BrowserConfig};
 use chromiumoxide::handler::{viewport::Viewport, Handler};
@@ -7,7 +8,7 @@ use chromiumoxide::page::Page;
 
 pub struct Acquirer {
     pub browser: Browser,
-    pub handle: tokio::task::JoinHandle<Handler>,
+    pub handle: task::JoinHandle<Handler>,
 }
 
 fn build_browser_config(headless: bool) -> anyhow::Result<BrowserConfig> {
@@ -32,7 +33,7 @@ impl Acquirer {
 
         let (browser, mut handler) = Browser::launch(config).await?;
 
-        let handle = tokio::spawn(async move {
+        let handle = task::spawn(async move {
             loop {
                 let _ = handler.next().await.unwrap();
             }

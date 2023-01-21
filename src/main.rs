@@ -4,7 +4,7 @@ mod args;
 use acquirer::Acquirer;
 use args::{Args, Parser};
 
-#[tokio::main]
+#[async_std::main]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
