@@ -45,10 +45,7 @@ impl Acquirer {
         let cookies = page.get_cookies().await.context("Failed to get cookies")?;
 
         cookies.iter().for_each(|cookie| {
-            println!(
-                "{} = {}\n  ; Domain = {}",
-                cookie.name, cookie.value, cookie.domain
-            );
+            eprintln!("{cookie:#?}");
         });
 
         Ok(())
