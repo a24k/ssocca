@@ -12,6 +12,7 @@ chromiumoxide = "0.4.0"
 clap = { version = "4.1.1", features = ["derive"] }
 futures = "0.3.25"
 headless_chrome = { git = "https://github.com/atroche/rust-headless-chrome", rev = "4e91d90edee71112ee3729c4a99e3bf0e1a06cbb" }
+tokio = { version = "1.24.2", features = ["full"] }
 
 [dev-dependencies]
 rstest = "0.16.0"
