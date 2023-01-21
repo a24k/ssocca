@@ -40,6 +40,8 @@ impl Acquirer {
     }
 
     pub async fn dump(&self, page: &Page) -> anyhow::Result<()> {
+        eprintln!("{:#?}", self.browser.version().await?);
+
         let cookies = page.get_cookies().await.context("Failed to get cookies")?;
 
         cookies.iter().for_each(|cookie| {
