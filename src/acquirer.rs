@@ -1,6 +1,6 @@
-use anyhow::anyhow;
+use anyhow::{anyhow, Context as _};
+use async_std::task;
 use futures::StreamExt;
-use async_std::{task};
 
 use chromiumoxide::browser::{Browser, BrowserConfig};
 use chromiumoxide::handler::{viewport::Viewport, Handler};
@@ -29,9 +29,12 @@ fn build_browser_config(headless: bool) -> anyhow::Result<BrowserConfig> {
 
 impl Acquirer {
     pub async fn launch(headless: bool) -> anyhow::Result<Acquirer> {
-        let config = build_browser_config(headless)?;
+        let config =
+            build_browser_config(headless).context("Failed to configure chrome browser")?;
 
-        let (browser, mut handler) = Browser::launch(config).await?;
+        let (browser, mut handler) = Browser::launch(config)
+            .await
+            .context("Failed to launch chrome browser")?;
 
         let handle = task::spawn(async move {
             loop {
@@ -43,13 +46,21 @@ impl Acquirer {
     }
 
     pub async fn navigate(&self, url: &str) -> anyhow::Result<Page> {
-        let page = self.browser.new_page(url).await?;
-        page.wait_for_navigation().await?;
+        let page = self
+            .browser
+            .new_page(url)
+            .await
+            .with_context(|| format!("Failed to navigate url = {}", url))?;
+
+        page.wait_for_navigation()
+            .await
+            .with_context(|| format!("Failed to navigate url = {}", url))?;
+
         Ok(page)
     }
 
     pub async fn dump(&self, page: &Page) -> anyhow::Result<()> {
-        let cookies = page.get_cookies().await?;
+        let cookies = page.get_cookies().await.context("Failed to get cookies")?;
 
         cookies.iter().for_each(|cookie| {
             println!(
@@ -62,7 +73,6 @@ impl Acquirer {
     }
 }
 
-/*
 #[cfg(test)]
 mod tests {
     use rstest::*;
@@ -73,11 +83,8 @@ mod tests {
     #[case("https://github.com")]
     #[should_panic(expected = "Failed to navigate url")]
     #[case("nowhere")]
-    #[should_panic(expected = "Failed to navigate url")]
-    #[case("https://nowhere.local")]
     async fn navigate(#[case] url: &str) {
         let acquirer = Acquirer::launch(true).await.unwrap();
         acquirer.navigate(url).await.unwrap();
     }
 }
-*/
