@@ -2,7 +2,7 @@ mod acquirer;
 mod args;
 
 use acquirer::Acquirer;
-use args::{Args, Parser};
+use args::{Args, Parser as _};
 
 #[async_std::main]
 async fn main() -> anyhow::Result<()> {

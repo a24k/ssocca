@@ -8,8 +8,8 @@ use chromiumoxide::browser::Browser;
 use chromiumoxide::page::Page;
 
 pub struct Acquirer {
-    pub browser: Browser,
-    pub handle: JoinHandle<()>,
+    browser: Browser,
+    handle: JoinHandle<()>,
 }
 
 impl Acquirer {
