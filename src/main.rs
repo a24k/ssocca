@@ -1,18 +1,26 @@
 mod acquirer;
 mod args;
 
-use acquirer::{Acquirer, AcquirerOxide};
+use acquirer::Acquirer;
 use args::{Args, Parser};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let _acquirer = AcquirerOxide::launch_oxide().await?;
+    let acquirer = Acquirer::launch(args.headless).await?;
 
-    let acquirer = Acquirer::launch(args.headless)?;
+    let page = acquirer.navigate(&args.url).await?;
 
-    acquirer.navigate(&args.url)?;
+    acquirer.dump(&page).await?;
 
-    acquirer.dump()
+    //acquirer.handle.await;
+
+    Ok(())
+
+    //let acquirer = Acquirer::launch(args.headless)?;
+
+    //acquirer.navigate(&args.url)?;
+
+    //acquirer.dump()
 }

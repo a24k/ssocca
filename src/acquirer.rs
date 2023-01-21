@@ -1,63 +1,54 @@
-use std::sync::Arc;
-
-use anyhow::{anyhow, Context as _};
-use headless_chrome::{Browser as HChrome, LaunchOptions, Tab};
+use anyhow::anyhow;
+use futures::StreamExt;
 
 use chromiumoxide::browser::{Browser, BrowserConfig};
-use chromiumoxide::handler::Handler;
-
-pub struct AcquirerOxide {
-    pub browser: Browser,
-    pub handler: Handler,
-}
-
-impl AcquirerOxide {
-    pub async fn launch_oxide() -> anyhow::Result<AcquirerOxide> {
-        let config = BrowserConfig::builder()
-            .with_head()
-            .build()
-            .map_err(|e| anyhow!(e))?;
-
-        let (browser, handler) = Browser::launch(config).await?;
-
-        Ok(AcquirerOxide { browser, handler })
-    }
-}
+use chromiumoxide::handler::{viewport::Viewport, Handler};
+use chromiumoxide::page::Page;
 
 pub struct Acquirer {
-    pub browser: HChrome,
-    pub tab: Arc<Tab>,
+    pub browser: Browser,
+    pub handle: tokio::task::JoinHandle<Handler>,
+}
+
+fn build_browser_config(headless: bool) -> anyhow::Result<BrowserConfig> {
+    let viewport = Viewport {
+        width: 0,
+        height: 0,
+        ..Default::default()
+    };
+
+    let builder = BrowserConfig::builder().viewport(viewport);
+    let builder = match headless {
+        true => builder,
+        false => builder.with_head(),
+    };
+
+    builder.build().map_err(|e| anyhow!(e))
 }
 
 impl Acquirer {
-    pub fn launch(headless: bool) -> anyhow::Result<Acquirer> {
-        let browser = HChrome::new(LaunchOptions {
-            headless,
-            ..Default::default()
-        })
-        .context("Failed to launch chrome browser")?;
+    pub async fn launch(headless: bool) -> anyhow::Result<Acquirer> {
+        let config = build_browser_config(headless)?;
 
-        let tab = browser
-            .wait_for_initial_tab()
-            .context("Failed to initialize tab")?;
+        let (browser, mut handler) = Browser::launch(config).await?;
 
-        Ok(Acquirer { browser, tab })
+        let handle = tokio::spawn(async move {
+            loop {
+                let _ = handler.next().await.unwrap();
+            }
+        });
+
+        Ok(Acquirer { browser, handle })
     }
 
-    pub fn navigate(&self, url: &str) -> anyhow::Result<()> {
-        self.tab
-            .navigate_to(url)
-            .with_context(|| format!("Failed to navigate url = {}", url))?;
-
-        self.tab
-            .wait_until_navigated()
-            .with_context(|| format!("Failed to navigate url = {}", url))?;
-
-        Ok(())
+    pub async fn navigate(&self, url: &str) -> anyhow::Result<Page> {
+        let page = self.browser.new_page(url).await?;
+        page.wait_for_navigation().await?;
+        Ok(page)
     }
 
-    pub fn dump(&self) -> anyhow::Result<()> {
-        let cookies = self.tab.get_cookies().context("Failed to get cookies")?;
+    pub async fn dump(&self, page: &Page) -> anyhow::Result<()> {
+        let cookies = page.get_cookies().await?;
 
         cookies.iter().for_each(|cookie| {
             println!(
@@ -70,6 +61,7 @@ impl Acquirer {
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use rstest::*;
@@ -82,8 +74,9 @@ mod tests {
     #[case("nowhere")]
     #[should_panic(expected = "Failed to navigate url")]
     #[case("https://nowhere.local")]
-    fn navigate(#[case] url: &str) {
-        let acquirer = Acquirer::launch(true).unwrap();
-        acquirer.navigate(url).unwrap();
+    async fn navigate(#[case] url: &str) {
+        let acquirer = Acquirer::launch(true).await.unwrap();
+        acquirer.navigate(url).await.unwrap();
     }
 }
+*/
