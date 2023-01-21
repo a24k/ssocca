@@ -8,7 +8,9 @@ description = "SSO Credential Cookie Acquirer"
 
 [dependencies]
 anyhow = "1.0.68"
-chromiumoxide = "0.4.0"
+chromiumoxide = { version = "0.4.0", features = [
+    "tokio-runtime",
+], default-features = false }
 clap = { version = "4.1.1", features = ["derive"] }
 futures = "0.3.25"
 headless_chrome = { git = "https://github.com/atroche/rust-headless-chrome", rev = "4e91d90edee71112ee3729c4a99e3bf0e1a06cbb" }
