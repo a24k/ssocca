@@ -320,6 +320,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap-verbosity-flag"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23e2b6c3dcdb73299f48ae05b294da14e2f560b3ed2c09e742269eb1b22af231"
+dependencies = [
+ "clap",
+ "log",
+]
+
+[[package]]
 name = "clap_derive"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -403,6 +413,19 @@ name = "either"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "90e5c1c8368803113bf0c9584fc495a58b86dc8a29edbf8fe877d21d9507e797"
+
+[[package]]
+name = "env_logger"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85cdab6a89accf66733ad5a1693a4dcced6aeff64602b634530dd73c1f3ee9f0"
+dependencies = [
+ "humantime",
+ "is-terminal",
+ "log",
+ "regex",
+ "termcolor",
+]
 
 [[package]]
 name = "errno"
@@ -629,6 +652,12 @@ name = "httparse"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d897f394bad6a705d5f4104762e116a75639e470d80901eed05a860a95cb1904"
+
+[[package]]
+name = "humantime"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "idna"
@@ -1011,13 +1040,16 @@ dependencies = [
 
 [[package]]
 name = "ssocca"
-version = "0.4.2"
+version = "0.4.4"
 dependencies = [
  "anyhow",
  "async-std",
  "chromiumoxide",
  "clap",
+ "clap-verbosity-flag",
+ "env_logger",
  "futures",
+ "log",
  "rstest",
 ]
 
