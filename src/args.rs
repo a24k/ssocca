@@ -9,6 +9,9 @@ pub struct Args {
 
     /// Url to initiate authentication
     pub url: String,
+
+    #[clap(flatten)]
+    pub verbosity: clap_verbosity_flag::Verbosity,
 }
 
 #[cfg(test)]

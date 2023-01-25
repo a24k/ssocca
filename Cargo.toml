@@ -1,6 +1,6 @@
 [package]
 name = "ssocca"
-version = "0.4.3"
+version = "0.4.4"
 edition = "2021"
 license = "MIT"
 authors = ["Atsushi KAWASAKI <ak@xlix.org>"]
@@ -11,6 +11,7 @@ anyhow = "1.0.68"
 async-std = "1.12.0"
 chromiumoxide = "0.4.0"
 clap = { version = "4.1.1", features = ["derive"] }
+clap-verbosity-flag = "2.0.0"
 env_logger = "0.10.0"
 futures = "0.3.25"
 log = "0.4.17"

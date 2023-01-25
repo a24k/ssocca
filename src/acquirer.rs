@@ -3,7 +3,7 @@ mod config;
 use anyhow::Context as _;
 use async_std::{task, task::JoinHandle};
 use futures::StreamExt;
-use log::info;
+use log::{debug, info};
 
 use chromiumoxide::browser::Browser;
 use chromiumoxide::page::Page;
@@ -41,12 +41,12 @@ impl Acquirer {
     }
 
     pub async fn dump(&self, page: &Page) -> anyhow::Result<()> {
-        info!("{:#?}", self.browser.version().await?);
+        debug!("{:?}", self.browser.version().await?);
 
         let cookies = page.get_cookies().await.context("Failed to get cookies")?;
 
         cookies.iter().for_each(|cookie| {
-            info!("{cookie:#?}");
+            info!("{cookie:?}");
         });
 
         Ok(())

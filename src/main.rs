@@ -1,5 +1,6 @@
 mod acquirer;
 mod args;
+mod logger;
 
 use acquirer::Acquirer;
 use args::{Args, Parser as _};
@@ -8,7 +9,7 @@ use args::{Args, Parser as _};
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    env_logger::init();
+    logger::init(args.verbosity);
 
     let acquirer = Acquirer::launch(args.headless).await?;
 
