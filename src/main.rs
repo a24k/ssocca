@@ -8,6 +8,8 @@ use args::{Args, Parser as _};
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
+    env_logger::init();
+
     let acquirer = Acquirer::launch(args.headless).await?;
 
     let page = acquirer.navigate(&args.url).await?;
