@@ -10,7 +10,7 @@ pub struct Args {
     #[clap(flatten)]
     pub verbosity: clap_verbosity_flag::Verbosity,
 
-    /// Specify the path to Chrome executable
+    /// Specify path to a Chrome executable
     #[arg(long)]
     pub chrome: Option<std::path::PathBuf>,
 
