@@ -15,9 +15,10 @@ Arguments:
   <URL>  Url to initiate authentication
 
 Options:
-  -l, --headless    Use browser in headless mode
-  -v, --verbose...  More output per occurrence
-  -q, --quiet...    Less output per occurrence
-  -h, --help        Print help
-  -V, --version     Print version
-```
+  -l, --headless         Use browser in headless mode
+  -v, --verbose...       More output per occurrence
+  -q, --quiet...         Less output per occurrence
+      --chrome <CHROME>  Specify the path to Chrome executable
+  -h, --help             Print help
+  -V, --version          Print version
+  ```
