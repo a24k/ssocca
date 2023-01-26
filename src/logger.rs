@@ -1,6 +1,6 @@
 use clap_verbosity_flag::Verbosity;
 
-pub fn init(verbosity: Verbosity) {
+pub fn init(verbosity: &Verbosity) {
     match verbosity.log_level() {
         Some(log::Level::Error) => env_logger::builder().init(),
         _ => env_logger::builder()

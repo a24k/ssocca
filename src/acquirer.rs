@@ -1,11 +1,11 @@
-mod config;
+pub mod config;
 
 use anyhow::Context as _;
 use async_std::{task, task::JoinHandle};
 use futures::StreamExt;
 use log::{debug, info};
 
-use chromiumoxide::browser::Browser;
+use chromiumoxide::browser::{Browser, BrowserConfig};
 use chromiumoxide::page::Page;
 
 pub struct Acquirer {
@@ -14,9 +14,7 @@ pub struct Acquirer {
 }
 
 impl Acquirer {
-    pub async fn launch(headless: bool) -> anyhow::Result<Acquirer> {
-        let config = config::build(headless)?;
-
+    pub async fn launch(config: BrowserConfig) -> anyhow::Result<Acquirer> {
         let (browser, mut handler) = Browser::launch(config)
             .await
             .context("Failed to launch chrome browser")?;
@@ -65,15 +63,19 @@ impl Acquirer {
 mod tests {
     use rstest::*;
 
-    use super::Acquirer;
+    use super::{config, Acquirer};
+    use crate::args::{Args, Parser as _};
 
     #[rstest]
-    #[case("https://www.google.com")]
+    #[case("https://example.com/")]
     #[should_panic(expected = "Failed to navigate url")]
     #[case("nowhere")]
-    async fn navigate(#[case] url: &str) {
-        let acquirer = Acquirer::launch(true).await.unwrap();
-        acquirer.navigate(url).await.unwrap();
+    async fn navigate(#[case] input: &str) {
+        let args = Args::parse_from(vec!["ssocca", "--headless", input]);
+        let acquirer = Acquirer::launch(config::build(&args).unwrap())
+            .await
+            .unwrap();
+        acquirer.navigate(&args.url).await.unwrap();
         acquirer.close().await.unwrap();
     }
 }

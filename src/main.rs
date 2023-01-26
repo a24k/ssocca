@@ -2,16 +2,16 @@ mod acquirer;
 mod args;
 mod logger;
 
-use acquirer::Acquirer;
+use acquirer::{config, Acquirer};
 use args::{Args, Parser as _};
 
 #[async_std::main]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    logger::init(args.verbosity);
+    logger::init(&args.verbosity);
 
-    let acquirer = Acquirer::launch(args.headless).await?;
+    let acquirer = Acquirer::launch(config::build(&args)?).await?;
 
     let page = acquirer.navigate(&args.url).await?;
 
