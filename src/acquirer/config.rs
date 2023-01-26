@@ -1,9 +1,10 @@
 use anyhow::{anyhow, Context as _};
+use std::path::PathBuf;
 
 use chromiumoxide::browser::BrowserConfig;
 use chromiumoxide::handler::viewport::Viewport;
 
-pub(super) fn build(headless: bool) -> anyhow::Result<BrowserConfig> {
+pub(super) fn build(headless: bool, chrome: Option<PathBuf>) -> anyhow::Result<BrowserConfig> {
     let viewport = Viewport {
         width: 0,
         height: 0,
@@ -11,6 +12,11 @@ pub(super) fn build(headless: bool) -> anyhow::Result<BrowserConfig> {
     };
 
     let builder = BrowserConfig::builder().viewport(viewport);
+
+    let builder = match chrome {
+        Some(path) => builder.chrome_executable(path),
+        None => builder,
+    };
 
     let builder = match headless {
         true => builder,
@@ -31,6 +37,6 @@ mod tests {
     #[case(true)]
     #[case(false)]
     fn build(#[case] headless: bool) {
-        assert!(super::build(headless).is_ok());
+        assert!(super::build(headless, None).is_ok());
     }
 }

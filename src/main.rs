@@ -11,7 +11,7 @@ async fn main() -> anyhow::Result<()> {
 
     logger::init(args.verbosity);
 
-    let acquirer = Acquirer::launch(args.headless).await?;
+    let acquirer = Acquirer::launch(args.headless, args.chrome).await?;
 
     let page = acquirer.navigate(&args.url).await?;
 

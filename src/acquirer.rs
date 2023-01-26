@@ -4,6 +4,7 @@ use anyhow::Context as _;
 use async_std::{task, task::JoinHandle};
 use futures::StreamExt;
 use log::{debug, info};
+use std::path::PathBuf;
 
 use chromiumoxide::browser::Browser;
 use chromiumoxide::page::Page;
@@ -14,8 +15,8 @@ pub struct Acquirer {
 }
 
 impl Acquirer {
-    pub async fn launch(headless: bool) -> anyhow::Result<Acquirer> {
-        let config = config::build(headless)?;
+    pub async fn launch(headless: bool, chrome: Option<PathBuf>) -> anyhow::Result<Acquirer> {
+        let config = config::build(headless, chrome)?;
 
         let (browser, mut handler) = Browser::launch(config)
             .await
@@ -72,7 +73,7 @@ mod tests {
     #[should_panic(expected = "Failed to navigate url")]
     #[case("nowhere")]
     async fn navigate(#[case] url: &str) {
-        let acquirer = Acquirer::launch(true).await.unwrap();
+        let acquirer = Acquirer::launch(true, None).await.unwrap();
         acquirer.navigate(url).await.unwrap();
         acquirer.close().await.unwrap();
     }
