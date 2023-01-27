@@ -1,6 +1,6 @@
 pub mod config;
 
-use anyhow::Context as _;
+use anyhow::{anyhow, Context as _};
 use async_std::{task, task::JoinHandle};
 use futures::StreamExt;
 use log::{debug, info, warn};
@@ -11,6 +11,7 @@ use chromiumoxide::page::Page;
 pub struct Acquirer {
     browser: Browser,
     handle: JoinHandle<()>,
+    page: Page,
 }
 
 impl Acquirer {
@@ -20,42 +21,48 @@ impl Acquirer {
             .context("Failed to launch chrome browser")?;
 
         // temporary
-        let context = handler.default_browser_context();
-        warn!("{:?}", context);
+        warn!("{:?}", browser);
 
         let handle = task::spawn(async move { while (handler.next().await).is_some() {} });
 
-        // temporary
-        warn!("incognito = {:?}", browser.is_incognito());
+        // wait for initial page
+        async fn wait_for_initial_page(browser: &Browser) -> anyhow::Result<Page> {
+            // sleep will wait for first page (new tab).
+            std::thread::sleep(std::time::Duration::from_millis(1000));
+            // temporary
+            let mut pages = browser.pages().await?;
+            match pages.pop() {
+                Some(page) => Ok(page),
+                None => Err(anyhow!("cant find page")),
+            }
+        }
 
-        Ok(Acquirer { browser, handle })
+        let page = wait_for_initial_page(&browser).await?;
+
+        Ok(Acquirer {
+            browser,
+            handle,
+            page,
+        })
     }
 
-    pub async fn navigate(&self, url: &str) -> anyhow::Result<Page> {
+    pub async fn navigate(&self, url: &str) -> anyhow::Result<()> {
         // temporary
-        let pages = self.browser.pages().await?;
-        warn!("{pages:?}");
+        self.dump().await?;
 
-        let page = self
-            .browser
-            .new_page(url)
+        self.page.goto(url).await?;
+
+        self.page.wait_for_navigation()
             .await
             .with_context(|| format!("Failed to navigate url = {}", url))?;
 
-        // temporary
-        self.dump(&page).await?;
-
-        page.wait_for_navigation()
-            .await
-            .with_context(|| format!("Failed to navigate url = {}", url))?;
-
-        Ok(page)
+        Ok(())
     }
 
-    pub async fn dump(&self, page: &Page) -> anyhow::Result<()> {
+    pub async fn dump(&self) -> anyhow::Result<()> {
         debug!("{:?}", self.browser.version().await?);
 
-        let cookies = page.get_cookies().await.context("Failed to get cookies")?;
+        let cookies = self.page.get_cookies().await.context("Failed to get cookies")?;
         info!("{cookies:?}");
 
         Ok(())

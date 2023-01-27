@@ -14,12 +14,8 @@ async fn main() -> anyhow::Result<()> {
 
     let acquirer = Acquirer::launch(config::build(&args)?).await?;
 
-    let page = acquirer.navigate(&args.url).await?;
-    acquirer.dump(&page).await?;
-
-    // temporary
-    //let page = acquirer.navigate(&args.url).await?;
-    //acquirer.dump(&page).await?;
+    acquirer.navigate(&args.url).await?;
+    acquirer.dump().await?;
 
     acquirer.close().await
 }
