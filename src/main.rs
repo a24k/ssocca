@@ -7,6 +7,7 @@ use args::{Args, Parser as _};
 
 #[async_std::main]
 async fn main() -> anyhow::Result<()> {
+
     let args = Args::parse();
 
     logger::init(&args.verbosity);
@@ -17,8 +18,8 @@ async fn main() -> anyhow::Result<()> {
     acquirer.dump(&page).await?;
 
     // temporary
-    let page = acquirer.navigate(&args.url).await?;
-    acquirer.dump(&page).await?;
+    //let page = acquirer.navigate(&args.url).await?;
+    //acquirer.dump(&page).await?;
 
     acquirer.close().await
 }

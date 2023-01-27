@@ -19,6 +19,10 @@ impl Acquirer {
             .await
             .context("Failed to launch chrome browser")?;
 
+        // temporary
+        let context = handler.default_browser_context();
+        warn!("{:?}", context);
+
         let handle = task::spawn(async move { while (handler.next().await).is_some() {} });
 
         // temporary
