@@ -12,7 +12,7 @@ pub fn build(args: &Args) -> anyhow::Result<BrowserConfig> {
         ..Default::default()
     };
 
-    let builder = BrowserConfig::builder().viewport(viewport);
+    let builder = BrowserConfig::builder().viewport(viewport).incognito();
 
     let builder = match &args.chrome {
         None => builder,

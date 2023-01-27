@@ -3,7 +3,7 @@ pub mod config;
 use anyhow::Context as _;
 use async_std::{task, task::JoinHandle};
 use futures::StreamExt;
-use log::{debug, info};
+use log::{debug, info, warn};
 
 use chromiumoxide::browser::{Browser, BrowserConfig};
 use chromiumoxide::page::Page;
@@ -21,15 +21,25 @@ impl Acquirer {
 
         let handle = task::spawn(async move { while (handler.next().await).is_some() {} });
 
+        // temporary
+        warn!("incognito = {:?}", browser.is_incognito());
+
         Ok(Acquirer { browser, handle })
     }
 
     pub async fn navigate(&self, url: &str) -> anyhow::Result<Page> {
+        // temporary
+        let pages = self.browser.pages().await?;
+        warn!("{pages:?}");
+
         let page = self
             .browser
             .new_page(url)
             .await
             .with_context(|| format!("Failed to navigate url = {}", url))?;
+
+        // temporary
+        self.dump(&page).await?;
 
         page.wait_for_navigation()
             .await
@@ -42,10 +52,7 @@ impl Acquirer {
         debug!("{:?}", self.browser.version().await?);
 
         let cookies = page.get_cookies().await.context("Failed to get cookies")?;
-
-        cookies.iter().for_each(|cookie| {
-            info!("{cookie:?}");
-        });
+        info!("{cookies:?}");
 
         Ok(())
     }
