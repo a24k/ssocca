@@ -13,9 +13,9 @@ pub use config::AcquirerConfig;
 
 pub struct Acquirer {
     browser: Browser,
+    config: AcquirerConfig,
     handle: JoinHandle<()>,
     page: Page,
-    config: AcquirerConfig,
 }
 
 impl Acquirer {
@@ -26,7 +26,7 @@ impl Acquirer {
 
         let handle = task::spawn(async move { while (handler.next().await).is_some() {} });
 
-        let page = Self::wait_for_initial_page_with_timeout(&browser, config.timeout).await?;
+        let page = Self::wait_for_initial_page(&browser, config.timeout).await?;
         page.wait_for_navigation().await?;
 
         debug!("{:?}", browser);
@@ -34,17 +34,14 @@ impl Acquirer {
 
         Ok(Acquirer {
             browser,
+            config,
             handle,
             page,
-            config,
         })
     }
 
-    async fn wait_for_initial_page_with_timeout(
-        browser: &Browser,
-        timeout: Duration,
-    ) -> anyhow::Result<Page> {
-        async fn wait_for_initial_page(browser: &Browser) -> anyhow::Result<Page> {
+    async fn wait_for_initial_page(browser: &Browser, timeout: Duration) -> anyhow::Result<Page> {
+        async fn _wait_for_initial_page(browser: &Browser) -> anyhow::Result<Page> {
             let wait = Duration::from_millis(100);
 
             loop {
@@ -59,7 +56,7 @@ impl Acquirer {
             }
         }
 
-        let page = future::timeout(timeout, wait_for_initial_page(browser)).await;
+        let page = future::timeout(timeout, _wait_for_initial_page(browser)).await;
 
         match page {
             Ok(page) => page,
@@ -73,21 +70,20 @@ impl Acquirer {
         }
     }
 
-    pub async fn navigate_with_timeout(&self, url: &str) -> anyhow::Result<()> {
-        future::timeout(self.config.timeout, self.navigate(url))
+    pub async fn navigate(&self, url: &str) -> anyhow::Result<()> {
+        async fn _navigate(page: &Page, url: &str) -> anyhow::Result<()> {
+            page.goto(url).await?;
+
+            page.wait_for_navigation()
+                .await
+                .with_context(|| format!("Failed to navigate url = {}", url))?;
+
+            Ok(())
+        }
+
+        future::timeout(self.config.timeout, _navigate(&self.page, url))
             .await
             .with_context(|| format!("Timeout to navigate url = {}", url))?
-    }
-
-    pub async fn navigate(&self, url: &str) -> anyhow::Result<()> {
-        self.page.goto(url).await?;
-
-        self.page
-            .wait_for_navigation()
-            .await
-            .with_context(|| format!("Failed to navigate url = {}", url))?;
-
-        Ok(())
     }
 
     pub async fn dump(&self) -> anyhow::Result<()> {
@@ -120,6 +116,16 @@ mod tests {
 
     #[rstest]
     #[case("https://example.com/")]
+    async fn incognito(#[case] url: &str) {
+        let args = args!["--headless", url];
+        let acquirer = Acquirer::launch(AcquirerConfig::build(&args).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(true, acquirer.browser.is_incognito());
+    }
+
+    #[rstest]
+    #[case("https://example.com/")]
     #[should_panic(expected = "Timeout to navigate url")]
     #[case("nowhere")]
     async fn navigate(#[case] url: &str) {
@@ -127,17 +133,7 @@ mod tests {
         let acquirer = Acquirer::launch(AcquirerConfig::build(&args).unwrap())
             .await
             .unwrap();
-        acquirer.navigate_with_timeout(&args.url).await.unwrap();
+        acquirer.navigate(&args.url).await.unwrap();
         acquirer.close().await.unwrap();
-    }
-
-    #[rstest]
-    #[case("https://example.com/")]
-    async fn incognito(#[case] url: &str) {
-        let args = args!["--headless", url];
-        let acquirer = Acquirer::launch(AcquirerConfig::build(&args).unwrap())
-            .await
-            .unwrap();
-        assert_eq!(true, acquirer.browser.is_incognito());
     }
 }
