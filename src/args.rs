@@ -1,6 +1,4 @@
-pub use clap::Parser;
-
-#[derive(Debug, Parser)]
+#[derive(Debug, clap::Parser)]
 #[command(about, author, version)]
 pub struct Args {
     /// Use browser in headless mode
@@ -28,7 +26,14 @@ mod tests {
 
     use std::path::PathBuf;
 
-    use super::{Args, Parser as _};
+    use super::Args;
+
+    #[macro_export]
+    macro_rules! args {
+        ($($e:expr),*) => {
+            clap::Parser::parse_from(vec!["ssocca", $($e),*])
+        };
+    }
 
     #[rstest]
     fn verify() {
@@ -39,46 +44,43 @@ mod tests {
     #[rstest]
     #[case(
         false,
-        vec!["ssocca", "https://example.com/"],
+        args!["https://example.com/"],
     )]
     #[case(
         true,
-        vec!["ssocca", "-l", "https://example.com/"],
+        args!["-l", "https://example.com/"],
     )]
     #[case(
         true,
-        vec!["ssocca", "--headless", "https://example.com/"],
+        args!["--headless", "https://example.com/"],
     )]
-    fn headless(#[case] expected: bool, #[case] input: Vec<&str>) {
-        let args = Args::parse_from(input);
+    fn headless(#[case] expected: bool, #[case] args: Args) {
         assert_eq!(expected, args.headless);
     }
 
     #[rstest]
     #[case(
         None,
-        vec!["ssocca", "https://example.com/"],
+        args!["https://example.com/"],
     )]
     #[case(
         Some(PathBuf::from("/path/to/chrome")),
-        vec!["ssocca", "--chrome", "/path/to/chrome", "https://example.com/"],
+        args!["--chrome", "/path/to/chrome", "https://example.com/"],
     )]
-    fn chrome(#[case] expected: Option<PathBuf>, #[case] input: Vec<&str>) {
-        let args = Args::parse_from(input);
+    fn chrome(#[case] expected: Option<PathBuf>, #[case] args: Args) {
         assert_eq!(expected, args.chrome);
     }
 
     #[rstest]
     #[case(
         10,
-        vec!["ssocca", "https://example.com/"],
+        args!["https://example.com/"],
     )]
     #[case(
         5,
-        vec!["ssocca", "--timeout", "5", "https://example.com/"],
+        args!["--timeout", "5", "https://example.com/"],
     )]
-    fn timeout(#[case] expected: u8, #[case] input: Vec<&str>) {
-        let args = Args::parse_from(input);
+    fn timeout(#[case] expected: u8, #[case] args: Args) {
         assert_eq!(expected, args.timeout);
     }
 }

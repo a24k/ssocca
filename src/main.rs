@@ -2,20 +2,19 @@ mod acquirer;
 mod args;
 mod logger;
 
-use acquirer::{config, Acquirer};
-use args::{Args, Parser as _};
+use acquirer::{Acquirer, AcquirerConfig};
+use args::Args;
 
 #[async_std::main]
 async fn main() -> anyhow::Result<()> {
-
-    let args = Args::parse();
+    let args: Args = clap::Parser::parse();
 
     logger::init(&args.verbosity);
 
-    let acquirer = Acquirer::launch(config::build(&args)?).await?;
+    let acquirer = Acquirer::launch(AcquirerConfig::build(&args)?).await?;
 
     acquirer.dump().await?;
-    acquirer.navigate_with_timeout(&args.url, std::time::Duration::from_secs(5)).await?;
+    acquirer.navigate_with_timeout(&args.url).await?;
     acquirer.dump().await?;
 
     acquirer.close().await

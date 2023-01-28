@@ -6,25 +6,27 @@ use futures::StreamExt;
 use log::{debug, info, trace};
 use std::time::Duration;
 
-use chromiumoxide::browser::{Browser, BrowserConfig};
+use chromiumoxide::browser::Browser;
 use chromiumoxide::page::Page;
+
+pub use config::AcquirerConfig;
 
 pub struct Acquirer {
     browser: Browser,
     handle: JoinHandle<()>,
     page: Page,
+    config: AcquirerConfig,
 }
 
 impl Acquirer {
-    pub async fn launch(config: BrowserConfig) -> anyhow::Result<Acquirer> {
-        let (browser, mut handler) = Browser::launch(config)
+    pub async fn launch(config: AcquirerConfig) -> anyhow::Result<Acquirer> {
+        let (browser, mut handler) = Browser::launch(config.browser.clone())
             .await
             .context("Failed to launch chrome browser")?;
 
         let handle = task::spawn(async move { while (handler.next().await).is_some() {} });
 
-        let page =
-            Self::wait_for_initial_page_with_timeout(&browser, Duration::from_secs(10)).await?;
+        let page = Self::wait_for_initial_page_with_timeout(&browser, config.timeout).await?;
         page.wait_for_navigation().await?;
 
         debug!("{:?}", browser);
@@ -34,6 +36,7 @@ impl Acquirer {
             browser,
             handle,
             page,
+            config,
         })
     }
 
@@ -70,8 +73,8 @@ impl Acquirer {
         }
     }
 
-    pub async fn navigate_with_timeout(&self, url: &str, timeout: Duration) -> anyhow::Result<()> {
-        future::timeout(timeout, self.navigate(url))
+    pub async fn navigate_with_timeout(&self, url: &str) -> anyhow::Result<()> {
+        future::timeout(self.config.timeout, self.navigate(url))
             .await
             .with_context(|| format!("Timeout to navigate url = {}", url))?
     }
@@ -111,30 +114,28 @@ impl Acquirer {
 mod tests {
     use rstest::*;
 
-    use super::{config, Acquirer};
-    use crate::args::{Args, Parser as _};
+    use crate::args;
+
+    use super::{Acquirer, AcquirerConfig};
 
     #[rstest]
     #[case("https://example.com/")]
     #[should_panic(expected = "Timeout to navigate url")]
     #[case("nowhere")]
-    async fn navigate(#[case] input: &str) {
-        let args = Args::parse_from(vec!["ssocca", "--headless", input]);
-        let acquirer = Acquirer::launch(config::build(&args).unwrap())
+    async fn navigate(#[case] url: &str) {
+        let args = args!["--timeout", "5", "--headless", url];
+        let acquirer = Acquirer::launch(AcquirerConfig::build(&args).unwrap())
             .await
             .unwrap();
-        acquirer
-            .navigate_with_timeout(&args.url, super::Duration::from_secs(5))
-            .await
-            .unwrap();
+        acquirer.navigate_with_timeout(&args.url).await.unwrap();
         acquirer.close().await.unwrap();
     }
 
     #[rstest]
     #[case("https://example.com/")]
-    async fn incognito(#[case] input: &str) {
-        let args = Args::parse_from(vec!["ssocca", "--headless", input]);
-        let acquirer = Acquirer::launch(config::build(&args).unwrap())
+    async fn incognito(#[case] url: &str) {
+        let args = args!["--headless", url];
+        let acquirer = Acquirer::launch(AcquirerConfig::build(&args).unwrap())
             .await
             .unwrap();
         assert_eq!(true, acquirer.browser.is_incognito());
