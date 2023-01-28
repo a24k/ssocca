@@ -1,9 +1,10 @@
 pub mod config;
 
 use anyhow::Context as _;
-use async_std::{future,task, task::JoinHandle};
+use async_std::{future, task, task::JoinHandle};
 use futures::StreamExt;
-use log::{debug, info};
+use log::{debug, info, trace};
+use std::time::Duration;
 
 use chromiumoxide::browser::{Browser, BrowserConfig};
 use chromiumoxide::page::Page;
@@ -22,21 +23,11 @@ impl Acquirer {
 
         let handle = task::spawn(async move { while (handler.next().await).is_some() {} });
 
-        async fn wait_for_initial_page(browser: &Browser) -> anyhow::Result<Page> {
-            loop {
-                debug!("loop!");
-                task::sleep(std::time::Duration::from_millis(1000)).await;
-                let mut pages = browser.pages().await?;
-                match pages.pop() {
-                    Some(page) => return Ok(page),
-                    None => continue,
-                }
-            }
-        }
-
-        let page = future::timeout(std::time::Duration::from_secs(30), wait_for_initial_page(&browser)).await??;
+        let page =
+            Self::wait_for_initial_page_with_timeout(&browser, Duration::from_secs(10)).await?;
         page.wait_for_navigation().await?;
 
+        debug!("{:?}", browser);
         debug!("{:?}", browser.version().await?);
 
         Ok(Acquirer {
@@ -46,10 +37,46 @@ impl Acquirer {
         })
     }
 
-    pub async fn navigate(&self, url: &str) -> anyhow::Result<()> {
-        // temporary
-        self.dump().await?;
+    async fn wait_for_initial_page_with_timeout(
+        browser: &Browser,
+        timeout: Duration,
+    ) -> anyhow::Result<Page> {
+        async fn wait_for_initial_page(browser: &Browser) -> anyhow::Result<Page> {
+            let wait = Duration::from_millis(100);
 
+            loop {
+                trace!("Waiting for the initial page");
+                task::sleep(wait).await;
+
+                let mut pages = browser.pages().await.context("Retrieve list of pages")?;
+                match pages.pop() {
+                    Some(page) => return Ok(page),
+                    None => continue,
+                }
+            }
+        }
+
+        let page = future::timeout(timeout, wait_for_initial_page(browser)).await;
+
+        match page {
+            Ok(page) => page,
+            _ => {
+                debug!("Found no page. Create new one.");
+                browser
+                    .new_page("chrome://about/")
+                    .await
+                    .context("Failed to create new page")
+            }
+        }
+    }
+
+    pub async fn navigate_with_timeout(&self, url: &str, timeout: Duration) -> anyhow::Result<()> {
+        future::timeout(timeout, self.navigate(url))
+            .await
+            .with_context(|| format!("Timeout to navigate url = {}", url))?
+    }
+
+    pub async fn navigate(&self, url: &str) -> anyhow::Result<()> {
         self.page.goto(url).await?;
 
         self.page
@@ -89,14 +116,27 @@ mod tests {
 
     #[rstest]
     #[case("https://example.com/")]
-    #[should_panic(expected = "Failed to navigate url")]
+    #[should_panic(expected = "Timeout to navigate url")]
     #[case("nowhere")]
     async fn navigate(#[case] input: &str) {
         let args = Args::parse_from(vec!["ssocca", "--headless", input]);
         let acquirer = Acquirer::launch(config::build(&args).unwrap())
             .await
             .unwrap();
-        acquirer.navigate(&args.url).await.unwrap();
+        acquirer
+            .navigate_with_timeout(&args.url, super::Duration::from_secs(5))
+            .await
+            .unwrap();
         acquirer.close().await.unwrap();
+    }
+
+    #[rstest]
+    #[case("https://example.com/")]
+    async fn incognito(#[case] input: &str) {
+        let args = Args::parse_from(vec!["ssocca", "--headless", input]);
+        let acquirer = Acquirer::launch(config::build(&args).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(true, acquirer.browser.is_incognito());
     }
 }
