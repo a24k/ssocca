@@ -1,7 +1,7 @@
 pub mod config;
 
 use anyhow::Context as _;
-use async_std::{task, task::JoinHandle};
+use async_std::{future,task, task::JoinHandle};
 use futures::StreamExt;
 use log::{debug, info};
 
@@ -25,7 +25,7 @@ impl Acquirer {
         async fn wait_for_initial_page(browser: &Browser) -> anyhow::Result<Page> {
             loop {
                 debug!("loop!");
-                task::sleep(std::time::Duration::from_millis(100)).await;
+                task::sleep(std::time::Duration::from_millis(1000)).await;
                 let mut pages = browser.pages().await?;
                 match pages.pop() {
                     Some(page) => return Ok(page),
@@ -34,7 +34,7 @@ impl Acquirer {
             }
         }
 
-        let page = wait_for_initial_page(&browser).await?;
+        let page = future::timeout(std::time::Duration::from_secs(30), wait_for_initial_page(&browser)).await??;
         page.wait_for_navigation().await?;
 
         debug!("{:?}", browser.version().await?);
