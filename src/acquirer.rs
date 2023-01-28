@@ -3,7 +3,7 @@ pub mod config;
 use anyhow::{anyhow, Context as _};
 use async_std::{task, task::JoinHandle};
 use futures::StreamExt;
-use log::{debug, info, warn};
+use log::{debug, info};
 
 use chromiumoxide::browser::{Browser, BrowserConfig};
 use chromiumoxide::page::Page;
@@ -20,24 +20,24 @@ impl Acquirer {
             .await
             .context("Failed to launch chrome browser")?;
 
-        // temporary
-        warn!("{:?}", browser);
-
         let handle = task::spawn(async move { while (handler.next().await).is_some() {} });
 
-        // wait for initial page
         async fn wait_for_initial_page(browser: &Browser) -> anyhow::Result<Page> {
-            // sleep will wait for first page (new tab).
-            std::thread::sleep(std::time::Duration::from_millis(1000));
-            // temporary
-            let mut pages = browser.pages().await?;
-            match pages.pop() {
-                Some(page) => Ok(page),
-                None => Err(anyhow!("cant find page")),
+            loop {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+                debug!("loop");
+                let mut pages = browser.pages().await?;
+                match pages.pop() {
+                    Some(page) => return Ok(page),
+                    None => continue,
+                }
             }
         }
 
         let page = wait_for_initial_page(&browser).await?;
+        page.wait_for_navigation().await?;
+
+        debug!("{:?}", browser.version().await?);
 
         Ok(Acquirer {
             browser,
@@ -52,7 +52,8 @@ impl Acquirer {
 
         self.page.goto(url).await?;
 
-        self.page.wait_for_navigation()
+        self.page
+            .wait_for_navigation()
             .await
             .with_context(|| format!("Failed to navigate url = {}", url))?;
 
@@ -60,9 +61,11 @@ impl Acquirer {
     }
 
     pub async fn dump(&self) -> anyhow::Result<()> {
-        debug!("{:?}", self.browser.version().await?);
-
-        let cookies = self.page.get_cookies().await.context("Failed to get cookies")?;
+        let cookies = self
+            .page
+            .get_cookies()
+            .await
+            .context("Failed to get cookies")?;
         info!("{cookies:?}");
 
         Ok(())
