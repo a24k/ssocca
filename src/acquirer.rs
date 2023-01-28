@@ -25,7 +25,7 @@ impl Acquirer {
         async fn wait_for_initial_page(browser: &Browser) -> anyhow::Result<Page> {
             loop {
                 debug!("loop!");
-                //std::thread::sleep(std::time::Duration::from_millis(100));
+                task::sleep(std::time::Duration::from_millis(100)).await;
                 let mut pages = browser.pages().await?;
                 match pages.pop() {
                     Some(page) => return Ok(page),
