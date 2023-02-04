@@ -2,13 +2,12 @@ mod acquirer;
 mod args;
 mod logger;
 
-use anyhow::anyhow;
 use async_std::task;
+use log::error;
 use std::process::ExitCode;
 
 use acquirer::{Acquirer, AcquirerConfig};
 use args::Args;
-use log::error;
 
 fn main() -> ExitCode {
     async fn main(args: &Args) -> anyhow::Result<()> {
@@ -21,23 +20,18 @@ fn main() -> ExitCode {
         acquirer.close().await
     }
 
-    let args: anyhow::Result<Args> = clap::Parser::try_parse().map_err(|e| anyhow!(e));
+    let args: Args = match clap::Parser::try_parse() {
+        Ok(args) => args,
+        Err(err) => return logger::handle_clap_error(err),
+    };
 
-    match args {
-        Ok(args) => {
-            logger::init(&args.verbosity);
-            let ret = task::block_on(async { main(&args).await });
-            match ret {
-                Ok(()) => ExitCode::SUCCESS,
-                Err(e) => {
-                    error!("{}", e);
-                    ExitCode::FAILURE
-                }
-            }
-        }
-        Err(e) => {
-            env_logger::builder().init();
-            error!("{}", e);
+    logger::init_with_verbosity(&args.verbosity);
+
+    let result = task::block_on(async { main(&args).await });
+    match result {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(err) => {
+            error!("{:#}", err);
             ExitCode::FAILURE
         }
     }
