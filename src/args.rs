@@ -77,6 +77,19 @@ mod tests {
 
     #[rstest]
     #[case(
+        None,
+        args!["https://example.com/"],
+    )]
+    #[case(
+        Some(String::from("cookie_name")),
+        args!["--cookie", "cookie_name", "https://example.com/"],
+    )]
+    fn cookie(#[case] expected: Option<String>, #[case] args: Args) {
+        assert_eq!(expected, args.cookie);
+    }
+
+    #[rstest]
+    #[case(
         10,
         args!["https://example.com/"],
     )]
