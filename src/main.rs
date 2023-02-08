@@ -3,7 +3,7 @@ mod args;
 mod logger;
 
 use async_std::task;
-use log::error;
+use log::{error, info};
 use std::process::ExitCode;
 
 use acquirer::{Acquirer, AcquirerConfig};
@@ -13,9 +13,10 @@ fn main() -> ExitCode {
     async fn main(args: &Args) -> anyhow::Result<()> {
         let acquirer = Acquirer::launch(AcquirerConfig::build(args)?).await?;
 
-        acquirer.dump().await?;
         acquirer.navigate(&args.url).await?;
-        acquirer.dump().await?;
+
+        let acq = acquirer.acquire(&args.cookie).await?;
+        info!("Found {acq:?}");
 
         acquirer.close().await
     }

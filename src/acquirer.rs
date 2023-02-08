@@ -7,6 +7,7 @@ use log::{debug, info, trace};
 use std::time::Duration;
 
 use chromiumoxide::browser::Browser;
+use chromiumoxide::cdp::browser_protocol::network::Cookie;
 use chromiumoxide::page::Page;
 
 pub use config::AcquirerConfig;
@@ -86,7 +87,7 @@ impl Acquirer {
             .with_context(|| format!("Timeout to navigate url = {}", url))?
     }
 
-    pub async fn dump(&self) -> anyhow::Result<()> {
+    pub async fn dump(&self) -> anyhow::Result<Vec<Cookie>> {
         let cookies = self
             .page
             .get_cookies()
@@ -94,7 +95,12 @@ impl Acquirer {
             .context("Failed to get cookies")?;
         info!("{cookies:?}");
 
-        Ok(())
+        Ok(cookies)
+    }
+
+    pub async fn acquire(&self, cookie: &String) -> anyhow::Result<Option<Cookie>> {
+        let cookies = self.dump().await?;
+        Ok(cookies.iter().find(|c| c.name.eq(cookie)).cloned())
     }
 
     pub async fn close(mut self) -> anyhow::Result<()> {
