@@ -16,6 +16,10 @@ pub struct Args {
     #[arg(long, default_value_t = 10, value_name = "SEC")]
     pub timeout: u8,
 
+    /// Cookie name to acquire
+    #[arg(long, value_name = "NAME")]
+    pub cookie: String,
+
     /// Url to initiate authentication
     pub url: String,
 }
