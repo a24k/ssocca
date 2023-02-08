@@ -15,8 +15,10 @@ fn main() -> ExitCode {
 
         acquirer.navigate(&args.url).await?;
 
-        let acq = acquirer.acquire(&args.cookie).await?;
-        info!("Found {acq:?}");
+        if let Some(cookie) = &args.cookie {
+            let acq = acquirer.acquire(&cookie).await?;
+            info!("Found {acq:?}");
+        }
 
         acquirer.close().await
     }

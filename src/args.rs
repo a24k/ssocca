@@ -18,7 +18,7 @@ pub struct Args {
 
     /// Cookie name to acquire
     #[arg(long, value_name = "NAME")]
-    pub cookie: String,
+    pub cookie: Option<String>,
 
     /// Url to initiate authentication
     pub url: String,
