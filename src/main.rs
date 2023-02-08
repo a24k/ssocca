@@ -19,7 +19,7 @@ fn main() -> ExitCode {
         if let Some(cookie) = &args.cookie {
             loop {
                 task::sleep(Duration::from_millis(500)).await;
-                let cookie = acquirer.acquire(&cookie).await?;
+                let cookie = acquirer.acquire(cookie).await?;
                 if let Some(cookie) = cookie {
                     println!("{}={}", cookie.name, cookie.value);
                     break;

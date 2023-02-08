@@ -3,7 +3,7 @@ pub mod config;
 use anyhow::Context as _;
 use async_std::{future, task, task::JoinHandle};
 use futures::StreamExt;
-use log::{debug, info, trace};
+use log::{debug, info, trace, warn};
 use std::time::Duration;
 
 use chromiumoxide::browser::Browser;
@@ -62,7 +62,7 @@ impl Acquirer {
         match page {
             Ok(page) => page,
             _ => {
-                debug!("Found no page. Create new one.");
+                warn!("Found no page. Create new one.");
                 browser
                     .new_page("chrome://about/")
                     .await
@@ -77,14 +77,14 @@ impl Acquirer {
 
             page.wait_for_navigation()
                 .await
-                .with_context(|| format!("Failed to navigate url = {}", url))?;
+                .with_context(|| format!("Failed to navigate url = {url}"))?;
 
             Ok(())
         }
 
         future::timeout(self.config.timeout, _navigate(&self.page, url))
             .await
-            .with_context(|| format!("Timeout to navigate url = {}", url))?
+            .with_context(|| format!("Timeout to navigate url = {url}"))?
     }
 
     pub async fn cookies(&self) -> anyhow::Result<Vec<Cookie>> {
@@ -93,6 +93,7 @@ impl Acquirer {
             .get_cookies()
             .await
             .context("Failed to get cookies")?;
+
         debug!("{cookies:?}");
 
         Ok(cookies)
@@ -102,6 +103,7 @@ impl Acquirer {
         let cookies = self.cookies().await?;
 
         let found = cookies.iter().find(|c| c.name.eq(cookie));
+
         info!("Found {found:?}");
 
         Ok(found.cloned())
