@@ -87,20 +87,24 @@ impl Acquirer {
             .with_context(|| format!("Timeout to navigate url = {}", url))?
     }
 
-    pub async fn dump(&self) -> anyhow::Result<Vec<Cookie>> {
+    pub async fn cookies(&self) -> anyhow::Result<Vec<Cookie>> {
         let cookies = self
             .page
             .get_cookies()
             .await
             .context("Failed to get cookies")?;
-        info!("{cookies:?}");
+        debug!("{cookies:?}");
 
         Ok(cookies)
     }
 
     pub async fn acquire(&self, cookie: &String) -> anyhow::Result<Option<Cookie>> {
-        let cookies = self.dump().await?;
-        Ok(cookies.iter().find(|c| c.name.eq(cookie)).cloned())
+        let cookies = self.cookies().await?;
+
+        let found = cookies.iter().find(|c| c.name.eq(cookie));
+        info!("Found {found:?}");
+
+        Ok(found.cloned())
     }
 
     pub async fn close(mut self) -> anyhow::Result<()> {
