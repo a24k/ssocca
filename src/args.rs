@@ -16,6 +16,10 @@ pub struct Args {
     #[arg(long, default_value_t = 10, value_name = "SEC")]
     pub timeout: u8,
 
+    /// Cookie name to acquire
+    #[arg(long, value_name = "NAME")]
+    pub cookie: Option<String>,
+
     /// Url to initiate authentication
     pub url: String,
 }
@@ -69,6 +73,19 @@ mod tests {
     )]
     fn chrome(#[case] expected: Option<PathBuf>, #[case] args: Args) {
         assert_eq!(expected, args.chrome);
+    }
+
+    #[rstest]
+    #[case(
+        None,
+        args!["https://example.com/"],
+    )]
+    #[case(
+        Some(String::from("cookie_name")),
+        args!["--cookie", "cookie_name", "https://example.com/"],
+    )]
+    fn cookie(#[case] expected: Option<String>, #[case] args: Args) {
+        assert_eq!(expected, args.cookie);
     }
 
     #[rstest]
