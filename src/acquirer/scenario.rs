@@ -10,6 +10,7 @@ pub mod rule {
     pub enum Rule {
         Start(Start),
         Input(Input),
+        Totp(Totp),
         Click(Click),
         Finish(Finish),
     }
@@ -27,6 +28,13 @@ pub mod rule {
         pub on: Option<UrlPattern>,
         pub to: CssSelector,
         pub value: String,
+    }
+
+    #[allow(dead_code)]
+    pub struct Totp {
+        pub on: Option<UrlPattern>,
+        pub to: CssSelector,
+        pub seed: String,
     }
 
     #[allow(dead_code)]
