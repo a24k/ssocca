@@ -28,6 +28,12 @@ pub mod rule {
         pub value: String,
     }
 
+    #[allow(dead_code)]
+    pub struct Click {
+        pub on: Option<UrlPattern>,
+        pub to: CssSelector,
+    }
+
     type CookieKey = String;
     type CookieDomain = String;
 
