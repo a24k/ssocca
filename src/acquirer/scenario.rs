@@ -10,6 +10,7 @@ pub mod rule {
     pub enum Rule {
         Start(Start),
         Input(Input),
+        Click(Click),
         Finish(Finish),
     }
 
