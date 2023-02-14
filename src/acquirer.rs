@@ -9,9 +9,11 @@ use std::time::Duration;
 
 use chromiumoxide::browser::Browser;
 use chromiumoxide::cdp::browser_protocol::network::Cookie;
+use chromiumoxide::cdp::browser_protocol::page::NavigateParams;
 use chromiumoxide::page::Page;
 
 pub use config::AcquirerConfig;
+pub use scenario::{rule::Rule, Scenario};
 
 pub struct Acquirer {
     browser: Browser,
@@ -72,20 +74,20 @@ impl Acquirer {
         }
     }
 
-    pub async fn navigate(&self, url: &str) -> anyhow::Result<()> {
-        async fn _navigate(page: &Page, url: &str) -> anyhow::Result<()> {
-            page.goto(url).await?;
+    pub async fn navigate(&self, to: &NavigateParams) -> anyhow::Result<()> {
+        async fn _navigate(page: &Page, to: &NavigateParams) -> anyhow::Result<()> {
+            page.goto(to.clone()).await?;
 
             page.wait_for_navigation()
                 .await
-                .with_context(|| format!("Failed to navigate url = {url}"))?;
+                .with_context(|| format!("Failed to navigate url = {:?}", to))?;
 
             Ok(())
         }
 
-        future::timeout(self.config.timeout, _navigate(&self.page, url))
+        future::timeout(self.config.timeout, _navigate(&self.page, to))
             .await
-            .with_context(|| format!("Timeout to navigate url = {url}"))?
+            .with_context(|| format!("Timeout to navigate url = {to:?}"))?
     }
 
     pub async fn cookies(&self) -> anyhow::Result<Vec<Cookie>> {
@@ -100,14 +102,17 @@ impl Acquirer {
         Ok(cookies)
     }
 
-    pub async fn acquire(&self, cookie: &String) -> anyhow::Result<Option<Cookie>> {
+    pub async fn acquire(&self, cookeys: &[String]) -> anyhow::Result<Vec<Cookie>> {
         let cookies = self.cookies().await?;
 
-        let found = cookies.iter().find(|c| c.name.eq(cookie));
+        let found: Vec<Cookie> = cookies
+            .into_iter()
+            .filter(|cookie| cookeys.contains(&cookie.name))
+            .collect();
 
         info!("Found {found:?}");
 
-        Ok(found.cloned())
+        Ok(found)
     }
 
     pub async fn close(mut self) -> anyhow::Result<()> {
@@ -116,8 +121,7 @@ impl Acquirer {
         self.handle.await;
 
         Ok(())
-    }
-}
+    } }
 
 #[cfg(test)]
 mod tests {
@@ -146,7 +150,7 @@ mod tests {
         let acquirer = Acquirer::launch(AcquirerConfig::build(&args).unwrap())
             .await
             .unwrap();
-        acquirer.navigate(&args.url).await.unwrap();
+        acquirer.navigate(&(&args.url).into()).await.unwrap();
         acquirer.close().await.unwrap();
     }
 }

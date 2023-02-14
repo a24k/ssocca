@@ -1,6 +1,8 @@
 #[allow(dead_code)]
 pub struct Scenario {
-    rules: Vec<rule::Rule>,
+    pub start: Option<rule::Start>,      // TODO: to be mandatory
+    pub rules: Vec<rule::Rule>,
+    pub finish: Option<rule::Finish>,    // TODO: to be mandatory
 }
 
 pub mod rule {
@@ -8,11 +10,9 @@ pub mod rule {
 
     #[allow(dead_code)]
     pub enum Rule {
-        Start(Start),
         Input(Input),
         Totp(Totp),
         Click(Click),
-        Finish(Finish),
     }
 
     #[allow(dead_code)]
