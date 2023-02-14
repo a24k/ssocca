@@ -77,14 +77,18 @@ mod tests {
 
     #[rstest]
     #[case(
-        None,
+        vec![],
         args!["https://example.com/"],
     )]
     #[case(
-        Some(String::from("cookie_name")),
+        vec![String::from("cookie_name")],
         args!["--cookie", "cookie_name", "https://example.com/"],
     )]
-    fn cookie(#[case] expected: Option<String>, #[case] args: Args) {
+    #[case(
+        vec![String::from("cookie_name1"), String::from("cookie_name2")],
+        args!["--cookie", "cookie_name1", "--cookie", "cookie_name2", "https://example.com/"],
+    )]
+    fn cookie(#[case] expected: Vec<String>, #[case] args: Args) {
         assert_eq!(expected, args.cookie);
     }
 
