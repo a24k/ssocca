@@ -1040,7 +1040,7 @@ dependencies = [
 
 [[package]]
 name = "ssocca"
-version = "0.6.0-scenario.0.4"
+version = "0.6.0-scenario.0.5"
 dependencies = [
  "anyhow",
  "async-std",
