@@ -22,9 +22,9 @@ fn main() -> ExitCode {
                 goto: (&args.url).into(),
             }),
             rules: vec![],
-            finish: args.cookie.as_ref().map(|cookie| Finish {
+            finish: Some(Finish {
                 on: None,
-                with: vec![cookie.into()],
+                with: args.cookie.clone(),
             }),
         };
 
