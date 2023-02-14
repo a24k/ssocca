@@ -18,35 +18,33 @@ fn main() -> ExitCode {
         let acquirer = Acquirer::launch(AcquirerConfig::build(args)?).await?;
 
         let scenario = Scenario {
-            start: Some(Start {
+            start: Start {
                 goto: (&args.url).into(),
-            }),
+            },
             rules: vec![],
-            finish: Some(Finish {
+            finish: Finish {
                 on: None,
                 with: args.cookie.clone(),
-            }),
+            },
         };
 
-        if let Some(start) = scenario.start {
-            acquirer.navigate(&start.goto).await?;
-        }
+        // Start
+        acquirer.navigate(&scenario.start.goto).await?;
 
-        if let Some(finish) = scenario.finish {
-            let mut cookeys = finish.with;
-            while !cookeys.is_empty() {
-                task::sleep(Duration::from_millis(500)).await;
+        // Finish
+        let mut cookeys = scenario.finish.with;
+        while !cookeys.is_empty() {
+            task::sleep(Duration::from_millis(500)).await;
 
-                let cookies = acquirer.acquire(&cookeys).await?;
-                let cookies_keys: Vec<String> =
-                    cookies.iter().map(|cookie| cookie.name.clone()).collect();
+            let cookies = acquirer.acquire(&cookeys).await?;
+            let cookies_keys: Vec<String> =
+                cookies.iter().map(|cookie| cookie.name.clone()).collect();
 
-                cookeys.retain(|cookey| !cookies_keys.contains(cookey));
+            cookeys.retain(|cookey| !cookies_keys.contains(cookey));
 
-                cookies
-                    .iter()
-                    .for_each(|cookie| println!("{}={}", cookie.name, cookie.value));
-            }
+            cookies
+                .iter()
+                .for_each(|cookie| println!("{}={}", cookie.name, cookie.value));
         }
 
         acquirer.close().await

@@ -1,8 +1,8 @@
 #[allow(dead_code)]
 pub struct Scenario {
-    pub start: Option<rule::Start>,      // TODO: to be mandatory
+    pub start: rule::Start,
     pub rules: Vec<rule::Rule>,
-    pub finish: Option<rule::Finish>,    // TODO: to be mandatory
+    pub finish: rule::Finish,
 }
 
 pub mod rule {
