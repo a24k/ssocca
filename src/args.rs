@@ -21,6 +21,7 @@ pub struct Args {
     pub cookie: Vec<String>,
 
     /// Url to initiate authentication
+    #[arg(long, value_name = "URL")]
     pub url: String,
 }
 
@@ -48,15 +49,15 @@ mod tests {
     #[rstest]
     #[case(
         false,
-        args!["https://example.com/"],
+        args!["--url", "https://example.com/"],
     )]
     #[case(
         true,
-        args!["-l", "https://example.com/"],
+        args!["-l", "--url", "https://example.com/"],
     )]
     #[case(
         true,
-        args!["--headless", "https://example.com/"],
+        args!["--headless", "--url", "https://example.com/"],
     )]
     fn headless(#[case] expected: bool, #[case] args: Args) {
         assert_eq!(expected, args.headless);
@@ -65,11 +66,11 @@ mod tests {
     #[rstest]
     #[case(
         None,
-        args!["https://example.com/"],
+        args!["--url", "https://example.com/"],
     )]
     #[case(
         Some(PathBuf::from("/path/to/chrome")),
-        args!["--chrome", "/path/to/chrome", "https://example.com/"],
+        args!["--chrome", "/path/to/chrome", "--url", "https://example.com/"],
     )]
     fn chrome(#[case] expected: Option<PathBuf>, #[case] args: Args) {
         assert_eq!(expected, args.chrome);
@@ -78,15 +79,15 @@ mod tests {
     #[rstest]
     #[case(
         vec![],
-        args!["https://example.com/"],
+        args!["--url", "https://example.com/"],
     )]
     #[case(
         vec![String::from("cookie_name")],
-        args!["--cookie", "cookie_name", "https://example.com/"],
+        args!["--cookie", "cookie_name", "--url", "https://example.com/"],
     )]
     #[case(
         vec![String::from("cookie_name1"), String::from("cookie_name2")],
-        args!["--cookie", "cookie_name1", "--cookie", "cookie_name2", "https://example.com/"],
+        args!["--cookie", "cookie_name1", "--cookie", "cookie_name2", "--url", "https://example.com/"],
     )]
     fn cookie(#[case] expected: Vec<String>, #[case] args: Args) {
         assert_eq!(expected, args.cookie);
@@ -95,11 +96,11 @@ mod tests {
     #[rstest]
     #[case(
         10,
-        args!["https://example.com/"],
+        args!["--url", "https://example.com/"],
     )]
     #[case(
         5,
-        args!["--timeout", "5", "https://example.com/"],
+        args!["--timeout", "5", "--url", "https://example.com/"],
     )]
     fn timeout(#[case] expected: u8, #[case] args: Args) {
         assert_eq!(expected, args.timeout);

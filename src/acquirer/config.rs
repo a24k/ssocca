@@ -55,10 +55,10 @@ mod tests {
     use crate::{args, args::Args};
 
     #[rstest]
-    #[case(args!["https://example.com/"])]
-    #[case(args!["--headless", "https://example.com/"])]
-    #[case(args!["--chrome", "/path/to/chrome", "https://example.com/"])]
-    #[case(args!["--timeout", "5", "https://example.com/"])]
+    #[case(args!["--url", "https://example.com/"])]
+    #[case(args!["--headless", "--url", "https://example.com/"])]
+    #[case(args!["--chrome", "/path/to/chrome", "--url", "https://example.com/"])]
+    #[case(args!["--timeout", "5", "--url", "https://example.com/"])]
     fn build(#[case] args: Args) {
         assert!(super::AcquirerConfig::build(&args).is_ok());
     }
@@ -66,11 +66,11 @@ mod tests {
     #[rstest]
     #[case(
         Duration::from_secs(10),
-        args!["https://example.com/"],
+        args!["--url", "https://example.com/"],
     )]
     #[case(
         Duration::from_secs(5),
-        args!["--timeout", "5", "https://example.com/"],
+        args!["--timeout", "5", "--url", "https://example.com/"],
     )]
     fn timeout(#[case] estimated: Duration, #[case] args: Args) {
         let config = super::AcquirerConfig::build(&args).unwrap();
