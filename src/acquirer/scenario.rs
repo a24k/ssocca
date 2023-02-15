@@ -12,6 +12,7 @@ pub mod rule {
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Deserialize, Serialize)]
+    #[serde(tag = "type", rename_all="lowercase")]
     pub enum Rule {
         Input(Input),
         Totp(Totp),

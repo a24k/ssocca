@@ -8,7 +8,7 @@ use std::process::ExitCode;
 use std::time::Duration;
 
 use acquirer::{
-    scenario::rule::{Finish, Start},
+    scenario::rule::{Finish, Input, Rule, Start},
     Acquirer, AcquirerConfig, Scenario,
 };
 use args::Args;
@@ -21,7 +21,11 @@ fn main() -> ExitCode {
             start: Start {
                 goto: (&args.url).into(),
             },
-            rules: vec![],
+            rules: vec![Rule::Input(Input {
+                on: None,
+                to: "selector".into(),
+                value: "value".into(),
+            })],
             finish: Finish {
                 on: None,
                 with: args.cookie.clone(),
