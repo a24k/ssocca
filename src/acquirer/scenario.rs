@@ -1,4 +1,6 @@
-#[allow(dead_code)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Scenario {
     pub start: rule::Start,
     pub rules: Vec<rule::Rule>,
@@ -7,15 +9,16 @@ pub struct Scenario {
 
 pub mod rule {
     use chromiumoxide::cdp::browser_protocol::page::NavigateParams;
+    use serde::{Deserialize, Serialize};
 
-    #[allow(dead_code)]
+    #[derive(Debug, Deserialize, Serialize)]
     pub enum Rule {
         Input(Input),
         Totp(Totp),
         Click(Click),
     }
 
-    #[allow(dead_code)]
+    #[derive(Debug, Deserialize, Serialize)]
     pub struct Start {
         pub goto: NavigateParams,
     }
@@ -23,21 +26,21 @@ pub mod rule {
     type UrlPattern = String;
     type CssSelector = String;
 
-    #[allow(dead_code)]
+    #[derive(Debug, Deserialize, Serialize)]
     pub struct Input {
         pub on: Option<UrlPattern>,
         pub to: CssSelector,
         pub value: String,
     }
 
-    #[allow(dead_code)]
+    #[derive(Debug, Deserialize, Serialize)]
     pub struct Totp {
         pub on: Option<UrlPattern>,
         pub to: CssSelector,
         pub seed: String,
     }
 
-    #[allow(dead_code)]
+    #[derive(Debug, Deserialize, Serialize)]
     pub struct Click {
         pub on: Option<UrlPattern>,
         pub to: CssSelector,
@@ -46,7 +49,7 @@ pub mod rule {
     type CookieKey = String;
     type CookieDomain = String;
 
-    #[allow(dead_code)]
+    #[derive(Debug, Deserialize, Serialize)]
     pub struct Finish {
         pub on: Option<CookieDomain>,
         pub with: Vec<CookieKey>,

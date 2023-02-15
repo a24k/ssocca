@@ -28,6 +28,9 @@ fn main() -> ExitCode {
             },
         };
 
+        // Serialize TOML
+        println!("{}", toml::to_string(&scenario).unwrap());
+
         // Start
         acquirer.navigate(&scenario.start.goto).await?;
 
