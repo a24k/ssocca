@@ -19,7 +19,7 @@ fn main() -> ExitCode {
 
         let scenario = Scenario {
             start: Start {
-                goto: (&args.url).into(),
+                from: (&args.url).into(),
             },
             rules: vec![Rule::Input(Input {
                 on: None,
@@ -36,7 +36,7 @@ fn main() -> ExitCode {
         println!("{}", toml::to_string(&scenario).unwrap());
 
         // Start
-        acquirer.navigate(&scenario.start.goto).await?;
+        acquirer.navigate(&scenario.start.from).await?;
 
         // Finish
         let mut cookeys = scenario.finish.with;

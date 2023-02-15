@@ -21,7 +21,7 @@ pub mod rule {
 
     #[derive(Debug, Deserialize, Serialize)]
     pub struct Start {
-        pub goto: NavigateParams,
+        pub from: NavigateParams,
     }
 
     type UrlPattern = String;
@@ -66,14 +66,14 @@ mod tests {
     #[rstest]
     #[case(
         "https://example.com",
-        Start { goto: "https://example.com".into() },
+        Start { from: "https://example.com".into() },
     )]
     fn start(#[case] expected: &str, #[case] rule: Start) {
-        assert_eq!(expected, rule.goto.url);
-        assert_eq!(None, rule.goto.referrer);
-        assert_eq!(None, rule.goto.transition_type);
-        assert_eq!(None, rule.goto.frame_id);
-        assert_eq!(None, rule.goto.referrer_policy);
+        assert_eq!(expected, rule.from.url);
+        assert_eq!(None, rule.from.referrer);
+        assert_eq!(None, rule.from.transition_type);
+        assert_eq!(None, rule.from.frame_id);
+        assert_eq!(None, rule.from.referrer_policy);
     }
 
     #[rstest]
