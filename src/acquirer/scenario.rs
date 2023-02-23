@@ -15,8 +15,8 @@ impl Scenario {
     pub async fn build(args: &Args) -> anyhow::Result<Scenario> {
         let scenario: anyhow::Result<Scenario> = Self::build_from_toml(&args.toml).await;
 
-        let start = scenario.as_ref().map_or(
-            match &args.url {
+        let start = scenario.as_ref().map_or_else(
+            |_| match &args.url {
                 Some(url) => Ok(rule::Start(url.into())),
                 None => Err(anyhow!("Found no toml configuration or url option.")),
             },
@@ -25,21 +25,27 @@ impl Scenario {
 
         let rules = scenario
             .as_ref()
-            .map_or(vec![], |scenario| scenario.rules.clone());
+            .map_or_else(|_| vec![], |scenario| scenario.rules.clone());
 
-        let finish = rule::Finish {
-            on: scenario
+        let finish = {
+            let on = scenario
                 .as_ref()
-                .map_or(None, |scenario| scenario.finish.on.clone()),
-            with: scenario.as_ref().map_or(args.cookie.clone(), |scenario| {
-                scenario
-                    .finish
-                    .with
-                    .clone()
-                    .into_iter()
-                    .chain(args.cookie.clone().into_iter())
-                    .collect()
-            }),
+                .map_or(None, |scenario| scenario.finish.on.clone());
+
+            let with = scenario.as_ref().map_or_else(
+                |_| args.cookie.clone(),
+                |scenario| {
+                    scenario
+                        .finish
+                        .with
+                        .clone()
+                        .into_iter()
+                        .chain(args.cookie.clone().into_iter())
+                        .collect()
+                },
+            );
+
+            rule::Finish { on, with }
         };
 
         Ok(Scenario {
