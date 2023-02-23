@@ -21,11 +21,18 @@ fn main() -> ExitCode {
             start: Start {
                 from: (&args.url).into(),
             },
-            rules: vec![Rule::Input(Input {
-                on: None,
-                to: "selector".into(),
-                value: "value".into(),
-            })],
+            rules: vec![
+                Rule::Input(Input {
+                    on: None,
+                    to: "selector01".into(),
+                    value: "value01".into(),
+                }),
+                Rule::Input(Input {
+                    on: None,
+                    to: "selector02".into(),
+                    value: "value02".into(),
+                }),
+            ],
             finish: Finish {
                 on: None,
                 with: args.cookie.clone(),
