@@ -26,7 +26,7 @@ pub struct Args {
 
     /// Specify path to a configuration file
     #[arg(value_name = "TOML")]
-    pub config: Option<std::path::PathBuf>,
+    pub toml: Option<std::path::PathBuf>,
 }
 
 #[cfg(test)]
