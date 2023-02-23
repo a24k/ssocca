@@ -22,7 +22,11 @@ pub struct Args {
 
     /// Url to initiate authentication
     #[arg(long, value_name = "URL")]
-    pub url: String,
+    pub url: Option<String>,
+
+    /// Specify path to a configuration file
+    #[arg(value_name = "PATH")]
+    pub config: std::path::PathBuf,
 }
 
 #[cfg(test)]

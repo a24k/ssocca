@@ -2,43 +2,20 @@ mod acquirer;
 mod args;
 mod logger;
 
-use async_std::task;
+use async_std::{fs, task};
 use log::error;
 use std::process::ExitCode;
 use std::time::Duration;
 
-use acquirer::{
-    scenario::rule::{Finish, Input, Rule, Start},
-    Acquirer, AcquirerConfig, Scenario,
-};
+use acquirer::{Acquirer, AcquirerConfig, Scenario};
 use args::Args;
 
 fn main() -> ExitCode {
     async fn main(args: &Args) -> anyhow::Result<()> {
         let acquirer = Acquirer::launch(AcquirerConfig::build(args)?).await?;
 
-        let scenario = Scenario {
-            start: Start((&args.url).into()),
-            rules: vec![
-                Rule::Input(Input {
-                    on: None,
-                    to: "selector01".into(),
-                    value: "value01".into(),
-                }),
-                Rule::Input(Input {
-                    on: None,
-                    to: "selector02".into(),
-                    value: "value02".into(),
-                }),
-            ],
-            finish: Finish {
-                on: None,
-                with: args.cookie.clone(),
-            },
-        };
-
-        // Serialize TOML
-        println!("{}", toml::to_string(&scenario).unwrap());
+        let toml = fs::read_to_string(&args.config).await?;
+        let scenario: Scenario = toml::from_str(&toml)?;
 
         // Start
         acquirer.navigate(&scenario.start.0).await?;
