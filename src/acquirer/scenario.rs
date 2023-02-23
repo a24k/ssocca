@@ -12,7 +12,7 @@ pub mod rule {
     use serde::{Deserialize, Serialize};
 
     #[derive(Debug, Deserialize, Serialize)]
-    #[serde(tag = "type", rename_all="lowercase")]
+    #[serde(tag = "type", rename_all = "lowercase")]
     pub enum Rule {
         Input(Input),
         Totp(Totp),
@@ -20,9 +20,7 @@ pub mod rule {
     }
 
     #[derive(Debug, Deserialize, Serialize)]
-    pub struct Start {
-        pub from: NavigateParams,
-    }
+    pub struct Start(pub NavigateParams);
 
     type UrlPattern = String;
     type CssSelector = String;
@@ -66,14 +64,14 @@ mod tests {
     #[rstest]
     #[case(
         "https://example.com",
-        Start { from: "https://example.com".into() },
+        Start ( "https://example.com".into() ),
     )]
     fn start(#[case] expected: &str, #[case] rule: Start) {
-        assert_eq!(expected, rule.from.url);
-        assert_eq!(None, rule.from.referrer);
-        assert_eq!(None, rule.from.transition_type);
-        assert_eq!(None, rule.from.frame_id);
-        assert_eq!(None, rule.from.referrer_policy);
+        assert_eq!(expected, rule.0.url);
+        assert_eq!(None, rule.0.referrer);
+        assert_eq!(None, rule.0.transition_type);
+        assert_eq!(None, rule.0.frame_id);
+        assert_eq!(None, rule.0.referrer_policy);
     }
 
     #[rstest]

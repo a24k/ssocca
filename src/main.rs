@@ -18,9 +18,7 @@ fn main() -> ExitCode {
         let acquirer = Acquirer::launch(AcquirerConfig::build(args)?).await?;
 
         let scenario = Scenario {
-            start: Start {
-                from: (&args.url).into(),
-            },
+            start: Start((&args.url).into()),
             rules: vec![
                 Rule::Input(Input {
                     on: None,
@@ -43,7 +41,7 @@ fn main() -> ExitCode {
         println!("{}", toml::to_string(&scenario).unwrap());
 
         // Start
-        acquirer.navigate(&scenario.start.from).await?;
+        acquirer.navigate(&scenario.start.0).await?;
 
         // Finish
         let mut cookeys = scenario.finish.with;
