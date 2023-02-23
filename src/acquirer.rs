@@ -134,7 +134,7 @@ mod tests {
     #[rstest]
     #[case("https://example.com/")]
     async fn incognito(#[case] url: &str) {
-        let args = args!["--headless", "--url", url];
+        let args = args!["--headless", "--url", url, "dummy.toml"];
         let acquirer = Acquirer::launch(AcquirerConfig::build(&args).unwrap())
             .await
             .unwrap();
@@ -146,11 +146,12 @@ mod tests {
     #[should_panic(expected = "Timeout to navigate url")]
     #[case("nowhere")]
     async fn navigate(#[case] url: &str) {
-        let args = args!["--timeout", "5", "--headless", "--url", url];
+        let args = args!["--timeout", "5", "--headless", "--url", url, "dummy.toml"];
         let acquirer = Acquirer::launch(AcquirerConfig::build(&args).unwrap())
             .await
             .unwrap();
-        acquirer.navigate(&(&args.url).into()).await.unwrap();
+        let Some(url) = args.url else { panic!() };
+        acquirer.navigate(&(url).into()).await.unwrap();
         acquirer.close().await.unwrap();
     }
 }

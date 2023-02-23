@@ -53,15 +53,15 @@ mod tests {
     #[rstest]
     #[case(
         false,
-        args!["--url", "https://example.com/"],
+        args!["--url", "https://example.com/", "sample.toml"],
     )]
     #[case(
         true,
-        args!["-l", "--url", "https://example.com/"],
+        args!["-l", "--url", "https://example.com/", "sample.toml"],
     )]
     #[case(
         true,
-        args!["--headless", "--url", "https://example.com/"],
+        args!["--headless", "--url", "https://example.com/", "sample.toml"],
     )]
     fn headless(#[case] expected: bool, #[case] args: Args) {
         assert_eq!(expected, args.headless);
@@ -70,11 +70,11 @@ mod tests {
     #[rstest]
     #[case(
         None,
-        args!["--url", "https://example.com/"],
+        args!["--url", "https://example.com/", "sample.toml"],
     )]
     #[case(
         Some(PathBuf::from("/path/to/chrome")),
-        args!["--chrome", "/path/to/chrome", "--url", "https://example.com/"],
+        args!["--chrome", "/path/to/chrome", "--url", "https://example.com/", "sample.toml"],
     )]
     fn chrome(#[case] expected: Option<PathBuf>, #[case] args: Args) {
         assert_eq!(expected, args.chrome);
@@ -83,15 +83,15 @@ mod tests {
     #[rstest]
     #[case(
         vec![],
-        args!["--url", "https://example.com/"],
+        args!["--url", "https://example.com/", "sample.toml"],
     )]
     #[case(
         vec![String::from("cookie_name")],
-        args!["--cookie", "cookie_name", "--url", "https://example.com/"],
+        args!["--cookie", "cookie_name", "--url", "https://example.com/", "sample.toml"],
     )]
     #[case(
         vec![String::from("cookie_name1"), String::from("cookie_name2")],
-        args!["--cookie", "cookie_name1", "--cookie", "cookie_name2", "--url", "https://example.com/"],
+        args!["--cookie", "cookie_name1", "--cookie", "cookie_name2", "--url", "https://example.com/", "sample.toml"],
     )]
     fn cookie(#[case] expected: Vec<String>, #[case] args: Args) {
         assert_eq!(expected, args.cookie);
@@ -100,11 +100,11 @@ mod tests {
     #[rstest]
     #[case(
         10,
-        args!["--url", "https://example.com/"],
+        args!["--url", "https://example.com/", "sample.toml"],
     )]
     #[case(
         5,
-        args!["--timeout", "5", "--url", "https://example.com/"],
+        args!["--timeout", "5", "--url", "https://example.com/", "sample.toml"],
     )]
     fn timeout(#[case] expected: u8, #[case] args: Args) {
         assert_eq!(expected, args.timeout);
