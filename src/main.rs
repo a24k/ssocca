@@ -2,20 +2,43 @@ mod acquirer;
 mod args;
 mod logger;
 
+use anyhow::anyhow;
 use async_std::{fs, task};
 use log::error;
 use std::process::ExitCode;
 use std::time::Duration;
 
-use acquirer::{Acquirer, AcquirerConfig, Scenario};
+use acquirer::{
+    scenario::rule::{Finish, Start},
+    Acquirer, AcquirerConfig, Scenario,
+};
 use args::Args;
 
 fn main() -> ExitCode {
     async fn main(args: &Args) -> anyhow::Result<()> {
         let acquirer = Acquirer::launch(AcquirerConfig::build(args)?).await?;
 
-        let toml = fs::read_to_string(&args.config).await?;
-        let scenario: Scenario = toml::from_str(&toml)?;
+        let scenario: Scenario = match &args.config {
+            Some(toml) => {
+                let toml = fs::read_to_string(toml).await?;
+                toml::from_str(&toml)?
+            }
+            None => {
+                let url = args
+                    .url
+                    .clone()
+                    .ok_or_else(|| anyhow!("Start url is not found."))?;
+
+                Scenario {
+                    start: Start(url.into()),
+                    rules: vec![],
+                    finish: Finish {
+                        on: None,
+                        with: args.cookie.clone(),
+                    },
+                }
+            }
+        };
 
         // Start
         acquirer.navigate(&scenario.start.0).await?;

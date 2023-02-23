@@ -25,8 +25,8 @@ pub struct Args {
     pub url: Option<String>,
 
     /// Specify path to a configuration file
-    #[arg(value_name = "PATH")]
-    pub config: std::path::PathBuf,
+    #[arg(value_name = "TOML")]
+    pub config: Option<std::path::PathBuf>,
 }
 
 #[cfg(test)]
