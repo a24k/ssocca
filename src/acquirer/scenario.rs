@@ -13,26 +13,40 @@ pub struct Scenario {
 
 impl Scenario {
     pub async fn build(args: &Args) -> anyhow::Result<Scenario> {
-        let scenario_from_toml = Self::build_from_toml(&args.toml).await;
-        let scenario_from_args = Self::build_from_args(args).await;
+        let scenario: anyhow::Result<Scenario> = Self::build_from_toml(&args.toml).await;
 
-        match (scenario_from_toml, scenario_from_args) {
-            (Ok(scenario_from_toml), Ok(scenario_from_args)) => Ok(Scenario {
-                start: scenario_from_args.start,
-                rules: scenario_from_toml.rules,
-                finish: rule::Finish {
-                    on: scenario_from_toml.finish.on,
-                    with: scenario_from_toml
-                        .finish
-                        .with
-                        .into_iter()
-                        .chain(scenario_from_args.finish.with.into_iter())
-                        .collect(),
-                },
+        let start = scenario.as_ref().map_or(
+            match &args.url {
+                Some(url) => Ok(rule::Start(url.into())),
+                None => Err(anyhow!("Found no toml configuration or url option.")),
+            },
+            |scenario| Ok(scenario.start.clone()),
+        )?;
+
+        let rules = scenario
+            .as_ref()
+            .map_or(vec![], |scenario| scenario.rules.clone());
+
+        let finish = rule::Finish {
+            on: scenario
+                .as_ref()
+                .map_or(None, |scenario| scenario.finish.on.clone()),
+            with: scenario.as_ref().map_or(args.cookie.clone(), |scenario| {
+                scenario
+                    .finish
+                    .with
+                    .clone()
+                    .into_iter()
+                    .chain(args.cookie.clone().into_iter())
+                    .collect()
             }),
-            (Ok(scenario), Err(_)) | (Err(_), Ok(scenario)) => Ok(scenario),
-            (Err(_), Err(_)) => Err(anyhow!("Found no toml configuration or url option.")),
-        }
+        };
+
+        Ok(Scenario {
+            start,
+            rules,
+            finish,
+        })
     }
 
     async fn build_from_toml(toml: &Option<std::path::PathBuf>) -> anyhow::Result<Scenario> {
@@ -44,28 +58,13 @@ impl Scenario {
             None => Err(anyhow!("Found no toml configuration.")),
         }
     }
-
-    async fn build_from_args(args: &Args) -> anyhow::Result<Scenario> {
-        let url = args
-            .url
-            .as_ref()
-            .ok_or_else(|| anyhow!("Found no url option."))?;
-        Ok(Scenario {
-            start: rule::Start(url.into()),
-            rules: vec![],
-            finish: rule::Finish {
-                on: None,
-                with: args.cookie.clone(),
-            },
-        })
-    }
 }
 
 pub mod rule {
     use chromiumoxide::cdp::browser_protocol::page::NavigateParams;
     use serde::{Deserialize, Serialize};
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(tag = "type", rename_all = "lowercase")]
     pub enum Rule {
         Input(Input),
@@ -73,27 +72,27 @@ pub mod rule {
         Click(Click),
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct Start(pub NavigateParams);
 
     type UrlPattern = String;
     type CssSelector = String;
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct Input {
         pub on: Option<UrlPattern>,
         pub to: CssSelector,
         pub value: String,
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct Totp {
         pub on: Option<UrlPattern>,
         pub to: CssSelector,
         pub seed: String,
     }
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct Click {
         pub on: Option<UrlPattern>,
         pub to: CssSelector,
