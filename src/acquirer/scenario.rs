@@ -13,8 +13,23 @@ pub struct Scenario {
 
 impl Scenario {
     pub async fn build(args: &Args) -> anyhow::Result<Scenario> {
-        let scenario: anyhow::Result<Scenario> = Self::build_from_toml(&args.toml).await;
+        Self::override_with_args(
+            match &args.toml {
+                Some(toml) => Self::build_from_toml(fs::read_to_string(toml).await?),
+                None => Err(anyhow!("Found no toml configuration.")),
+            },
+            args,
+        )
+    }
 
+    fn build_from_toml(toml: String) -> anyhow::Result<Scenario> {
+        toml::from_str(&toml).map_err(|e| anyhow!(e))
+    }
+
+    fn override_with_args(
+        scenario: anyhow::Result<Scenario>,
+        args: &Args,
+    ) -> anyhow::Result<Scenario> {
         let start = scenario.as_ref().map_or_else(
             |_| match &args.url {
                 Some(url) => Ok(rule::Start(url.into())),
@@ -53,16 +68,6 @@ impl Scenario {
             rules,
             finish,
         })
-    }
-
-    async fn build_from_toml(toml: &Option<std::path::PathBuf>) -> anyhow::Result<Scenario> {
-        match toml {
-            Some(toml) => {
-                let toml = fs::read_to_string(toml).await?;
-                toml::from_str(&toml).map_err(|e| anyhow!(e))
-            }
-            None => Err(anyhow!("Found no toml configuration.")),
-        }
     }
 }
 
@@ -107,7 +112,7 @@ pub mod rule {
     type CookieKey = String;
     type CookieDomain = String;
 
-    #[derive(Debug, Deserialize, Serialize)]
+    #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct Finish {
         pub on: Option<CookieDomain>,
         pub with: Vec<CookieKey>,
