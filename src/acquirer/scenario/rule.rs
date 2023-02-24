@@ -1,7 +1,7 @@
 use chromiumoxide::cdp::browser_protocol::page::NavigateParams;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum Rule {
     Input(Input),
@@ -9,27 +9,27 @@ pub enum Rule {
     Click(Click),
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Start(pub NavigateParams);
 
 type UrlPattern = String;
 type CssSelector = String;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Input {
     pub on: Option<UrlPattern>,
     pub to: CssSelector,
     pub value: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Totp {
     pub on: Option<UrlPattern>,
     pub to: CssSelector,
     pub seed: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Click {
     pub on: Option<UrlPattern>,
     pub to: CssSelector,
@@ -38,7 +38,7 @@ pub struct Click {
 type CookieKey = String;
 type CookieDomain = String;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Finish {
     pub on: Option<CookieDomain>,
     pub with: Vec<CookieKey>,

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::args::Args;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub struct Scenario {
     pub start: rule::Start,
     pub rules: Vec<rule::Rule>,
@@ -73,23 +73,40 @@ impl Scenario {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use rstest::*;
 
-    use super::rule::*;
+    use super::*;
 
     #[rstest]
     #[case(
-        "https://example.com",
-        Start ( "https://example.com".into() ),
+        Scenario {
+            start: rule::Start("https://github.com".into()),
+            rules: vec![
+                rule::Rule::Input(rule::Input {
+                    on: None,
+                    to: "selector01".into(),
+                    value: "value01".into(),
+                }),
+            ],
+            finish: rule::Finish {
+                on: None,
+                with: vec!["preferred_color_mode".into(), "tz".into()]
+            },
+        },
+        r#"[start]
+           url = "https://github.com"
+
+           [[rules]]
+           type = "input"
+           to = "selector01"
+           value = "value01"
+
+           [finish]
+           with = ["preferred_color_mode", "tz"]"#
     )]
-    fn start(#[case] expected: &str, #[case] rule: Start) {
-        assert_eq!(expected, rule.0.url);
-        assert_eq!(None, rule.0.referrer);
-        assert_eq!(None, rule.0.transition_type);
-        assert_eq!(None, rule.0.frame_id);
-        assert_eq!(None, rule.0.referrer_policy);
+    fn build_from_toml(#[case] expected: Scenario, #[case] toml: String) {
+        assert_eq!(expected, Scenario::build_from_toml(toml).unwrap());
     }
 }
