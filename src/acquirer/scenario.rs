@@ -86,29 +86,48 @@ mod tests {
     #[rstest]
     #[case(
         Scenario {
-            start: rule::Start("https://github.com".into()),
+            start: rule::Start("https://example.com".into()),
+            rules: vec![],
+            finish: rule::Finish { on: None, with: vec![] },
+        },
+        r#"[start]
+           url = "https://example.com""#
+    )]
+    #[case(
+        Scenario {
+            start: rule::Start("https://example.com".into()),
             rules: vec![
                 rule::Rule::Input(rule::Input {
                     on: None,
                     to: "selector01".into(),
                     value: "value01".into(),
                 }),
+                rule::Rule::Input(rule::Input {
+                    on: None,
+                    to: "selector02".into(),
+                    value: "value02".into(),
+                }),
             ],
             finish: rule::Finish {
                 on: None,
-                with: vec!["preferred_color_mode".into(), "tz".into()]
+                with: vec!["cookey01".into(), "cookey02".into()]
             },
         },
         r#"[start]
-           url = "https://github.com"
+           url = "https://example.com"
 
            [[rules]]
            type = "input"
            to = "selector01"
            value = "value01"
 
+           [[rules]]
+           type = "input"
+           to = "selector02"
+           value = "value02"
+
            [finish]
-           with = ["preferred_color_mode", "tz"]"#
+           with = ["cookey01", "cookey02"]"#
     )]
     fn build_from_toml(#[case] expected: Scenario, #[case] toml: String) {
         assert_eq!(expected, Scenario::build_from_toml(toml).unwrap());
