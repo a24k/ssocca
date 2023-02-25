@@ -1,6 +1,6 @@
 pub mod rule;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context as _};
 use async_std::fs;
 use serde::{Deserialize, Serialize};
 
@@ -33,9 +33,11 @@ impl Scenario {
         args: &Args,
     ) -> anyhow::Result<Scenario> {
         let start = scenario.as_ref().map_or_else(
-            |_| match &args.url {
+            |error| match &args.url {
                 Some(url) => Ok(rule::Start(url.into())),
-                None => Err(anyhow!("Found no toml configuration or url option.")),
+                None => {
+                    Err(anyhow!("{error}")).context("Found no toml configuration or url option.")
+                }
             },
             |scenario| Ok(scenario.start.clone()),
         )?;
