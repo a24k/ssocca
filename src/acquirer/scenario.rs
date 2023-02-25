@@ -11,6 +11,7 @@ pub struct Scenario {
     pub start: rule::Start,
     #[serde(default)]
     pub rules: Vec<rule::Rule>,
+    #[serde(default)]
     pub finish: rule::Finish,
 }
 

@@ -45,6 +45,15 @@ pub struct Finish {
     pub with: Vec<CookieKey>,
 }
 
+impl Default for Finish {
+    fn default() -> Self {
+        Finish {
+            on: None,
+            with: vec![],
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use rstest::*;
