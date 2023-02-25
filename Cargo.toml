@@ -1,6 +1,6 @@
 [package]
 name = "ssocca"
-version = "0.6.0-scenario.0.5"
+version = "0.6.0-scenario.0.8"
 edition = "2021"
 license = "MIT"
 authors = ["Atsushi KAWASAKI <ak@xlix.org>"]
@@ -15,6 +15,8 @@ clap-verbosity-flag = "2.0.0"
 env_logger = "0.10.0"
 futures = "0.3.25"
 log = "0.4.17"
+serde = { version = "1.0.152", features = ["derive"] }
+toml = "0.7.2"
 
 [dev-dependencies]
 rstest = "0.16.0"

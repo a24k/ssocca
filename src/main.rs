@@ -7,29 +7,17 @@ use log::error;
 use std::process::ExitCode;
 use std::time::Duration;
 
-use acquirer::{
-    scenario::rule::{Finish, Start},
-    Acquirer, AcquirerConfig, Scenario,
-};
+use acquirer::{Acquirer, AcquirerConfig, Scenario};
 use args::Args;
 
 fn main() -> ExitCode {
     async fn main(args: &Args) -> anyhow::Result<()> {
+        let scenario = Scenario::build(args).await?;
+
         let acquirer = Acquirer::launch(AcquirerConfig::build(args)?).await?;
 
-        let scenario = Scenario {
-            start: Start {
-                goto: (&args.url).into(),
-            },
-            rules: vec![],
-            finish: Finish {
-                on: None,
-                with: args.cookie.clone(),
-            },
-        };
-
         // Start
-        acquirer.navigate(&scenario.start.goto).await?;
+        acquirer.navigate(&scenario.start.0).await?;
 
         // Finish
         let mut cookeys = scenario.finish.with;
