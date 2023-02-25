@@ -12,9 +12,9 @@ use args::Args;
 
 fn main() -> ExitCode {
     async fn main(args: &Args) -> anyhow::Result<()> {
-        let acquirer = Acquirer::launch(AcquirerConfig::build(args)?).await?;
-
         let scenario = Scenario::build(args).await?;
+
+        let acquirer = Acquirer::launch(AcquirerConfig::build(args)?).await?;
 
         // Start
         acquirer.navigate(&scenario.start.0).await?;
