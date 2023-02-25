@@ -38,20 +38,11 @@ pub struct Click {
 type CookieKey = String;
 type CookieDomain = String;
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Default)]
 pub struct Finish {
     pub on: Option<CookieDomain>,
     #[serde(default)]
     pub with: Vec<CookieKey>,
-}
-
-impl Default for Finish {
-    fn default() -> Self {
-        Finish {
-            on: None,
-            with: vec![],
-        }
-    }
 }
 
 #[cfg(test)]
