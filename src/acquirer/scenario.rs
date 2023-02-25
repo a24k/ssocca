@@ -9,6 +9,7 @@ use crate::args::Args;
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub struct Scenario {
     pub start: rule::Start,
+    #[serde(default)]
     pub rules: Vec<rule::Rule>,
     pub finish: rule::Finish,
 }
