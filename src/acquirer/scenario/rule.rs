@@ -41,6 +41,7 @@ type CookieDomain = String;
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Finish {
     pub on: Option<CookieDomain>,
+    #[serde(default)]
     pub with: Vec<CookieKey>,
 }
 
