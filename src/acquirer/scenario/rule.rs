@@ -12,8 +12,8 @@ pub enum Rule {
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Start(pub NavigateParams);
 
-type UrlPattern = String;
-type CssSelector = String;
+pub type UrlPattern = String;
+pub type CssSelector = String;
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub struct Input {

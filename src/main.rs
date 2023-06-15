@@ -3,7 +3,7 @@ mod args;
 mod logger;
 
 use async_std::task;
-use log::error;
+use log::{error, warn};
 use std::process::ExitCode;
 use std::time::Duration;
 
@@ -33,6 +33,19 @@ fn main() -> ExitCode {
             cookies
                 .iter()
                 .for_each(|cookie| println!("{}={}", cookie.name, cookie.value));
+
+            // Input / Totp / Click
+            for rule in &scenario.rules {
+                task::sleep(Duration::from_millis(200)).await;
+                let result = match rule {
+                    acquirer::scenario::rule::Rule::Input(input) => acquirer.fillin(input).await,
+                    acquirer::scenario::rule::Rule::Totp(totp) => acquirer.totp(totp).await,
+                    acquirer::scenario::rule::Rule::Click(click) => acquirer.click(click).await,
+                };
+                if let Err(err) = result {
+                    warn!("{:#}", err);
+                }
+            }
         }
 
         acquirer.close().await

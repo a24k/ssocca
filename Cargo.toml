@@ -1,6 +1,6 @@
 [package]
 name = "ssocca"
-version = "0.6.0-scenario.0.9"
+version = "0.6.0-scenario.1.0"
 edition = "2021"
 license = "MIT"
 authors = ["Atsushi KAWASAKI <ak@xlix.org>"]
@@ -17,6 +17,8 @@ futures = "0.3.28"
 log = "0.4.19"
 serde = { version = "1.0.164", features = ["derive"] }
 toml = "0.7.4"
+regex = "1.8.4"
+boringauth = "0.9.0"
 
 [dev-dependencies]
 rstest = "0.17.0"

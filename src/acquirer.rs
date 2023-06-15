@@ -1,10 +1,12 @@
 pub mod config;
 pub mod scenario;
 
-use anyhow::Context as _;
+use anyhow::{anyhow, Context as _};
 use async_std::{future, task, task::JoinHandle};
+use boringauth::oath::{HashFunction, TOTPBuilder};
 use futures::StreamExt;
 use log::{debug, info, trace, warn};
+use regex::Regex;
 use std::time::Duration;
 
 use chromiumoxide::browser::Browser;
@@ -13,7 +15,10 @@ use chromiumoxide::cdp::browser_protocol::page::NavigateParams;
 use chromiumoxide::page::Page;
 
 pub use config::AcquirerConfig;
-pub use scenario::{rule::Rule, Scenario};
+pub use scenario::{
+    rule::{Click, Input, Rule, Totp, UrlPattern},
+    Scenario,
+};
 
 pub struct Acquirer {
     browser: Browser,
@@ -90,6 +95,57 @@ impl Acquirer {
             .with_context(|| format!("Timeout to navigate url = {to:?}"))?
     }
 
+    async fn is_on(&self, on: Option<&UrlPattern>) -> anyhow::Result<()> {
+        match on {
+            Some(on) => match self.page.url().await {
+                Ok(Some(url)) => {
+                    let re = Regex::new(on)?;
+                    match re.is_match(&url) {
+                        true => Ok(()),
+                        false => Err(anyhow!(
+                            "Skip rule because the page({url}) doesn't match url rule."
+                        )),
+                    }
+                }
+                Ok(None) | Err(_) => Err(anyhow!("Skip rule because the page has no url.")),
+            },
+            None => Ok(()),
+        }
+    }
+
+    pub async fn fillin(&self, input: &Input) -> anyhow::Result<()> {
+        self.is_on(input.on.as_ref()).await?;
+
+        let element = self.page.find_element(&input.to).await?;
+        element.click().await?.type_str(&input.value).await?;
+        Ok(())
+    }
+
+    pub async fn totp(&self, totp: &Totp) -> anyhow::Result<()> {
+        self.is_on(totp.on.as_ref()).await?;
+
+        #[allow(deprecated)]
+        let generator = TOTPBuilder::new()
+            .base32_key(&totp.seed)
+            .output_len(6)
+            .hash_function(HashFunction::Sha1)
+            .finalize()
+            .unwrap();
+
+        let element = self.page.find_element(&totp.to).await?;
+        element.click().await?.type_str(generator.generate()).await?;
+        Ok(())
+    }
+
+    pub async fn click(&self, click: &Click) -> anyhow::Result<()> {
+        self.is_on(click.on.as_ref()).await?;
+
+        let element = self.page.find_element(&click.to).await?;
+        element.click().await?;
+        //self.page.wait_for_navigation().await?;
+        Ok(())
+    }
+
     pub async fn cookies(&self) -> anyhow::Result<Vec<Cookie>> {
         let cookies = self
             .page
@@ -121,7 +177,8 @@ impl Acquirer {
         self.handle.await;
 
         Ok(())
-    } }
+    }
+}
 
 #[cfg(test)]
 mod tests {
