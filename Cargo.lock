@@ -1192,7 +1192,7 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "ssocca"
-version = "0.6.0-scenario.0.9"
+version = "0.6.0-scenario.1.0"
 dependencies = [
  "anyhow",
  "async-std",
