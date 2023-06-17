@@ -9,10 +9,10 @@ use log::{debug, info, trace, warn};
 use regex::Regex;
 use std::time::Duration;
 
-use chromiumoxide::browser::Browser;
-use chromiumoxide::cdp::browser_protocol::network::Cookie;
+use chromiumoxide::cdp::browser_protocol::network::{Cookie, EventResponseReceivedExtraInfo};
 use chromiumoxide::cdp::browser_protocol::page::NavigateParams;
 use chromiumoxide::page::Page;
+use chromiumoxide::{browser::Browser, cdp::browser_protocol::network::EventResponseReceived};
 
 pub use config::AcquirerConfig;
 pub use scenario::{
@@ -37,6 +37,26 @@ impl Acquirer {
 
         let page = Self::wait_for_initial_page(&browser, config.timeout).await?;
         page.wait_for_navigation().await?;
+
+        let mut events = page.event_listener::<EventResponseReceived>().await?;
+        let _ = task::spawn(async move {
+            while let Some(event) = events.next().await {
+                println!("EventResponseReceived: {:?}", event);
+            }
+            debug!("EventResponseReceived: closed.");
+        });
+
+        let mut events = page
+            .event_listener::<EventResponseReceivedExtraInfo>()
+            .await?;
+        let _ = task::spawn(async move {
+            while let Some(event) = events.next().await {
+                println!("EventResponseReceivedExtraInfo: {:?}", event);
+            }
+            // TODO: should wait before exit
+            task::sleep(Duration::from_millis(500)).await;
+            debug!("EventResponseReceivedExtraInfo: closed.");
+        });
 
         debug!("{:?}", browser);
         debug!("{:?}", browser.version().await?);
@@ -133,7 +153,11 @@ impl Acquirer {
             .unwrap();
 
         let element = self.page.find_element(&totp.to).await?;
-        element.click().await?.type_str(generator.generate()).await?;
+        element
+            .click()
+            .await?
+            .type_str(generator.generate())
+            .await?;
         Ok(())
     }
 
