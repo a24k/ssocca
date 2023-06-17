@@ -25,8 +25,6 @@ pub struct Acquirer {
     config: AcquirerConfig,
     handle: JoinHandle<()>,
     page: Page,
-    handle_event_response_received: JoinHandle<()>,
-    handle_event_response_received_extra_info: JoinHandle<()>,
 }
 
 impl Acquirer {
@@ -58,6 +56,12 @@ impl Acquirer {
             debug!("EventResponseReceivedExtraInfo: closed.");
         });
 
+        let handle = task::spawn(async move {
+            handle.await;
+            handle_event_response_received.await;
+            handle_event_response_received_extra_info.await;
+        });
+
         debug!("{:?}", browser);
         debug!("{:?}", browser.version().await?);
 
@@ -66,8 +70,6 @@ impl Acquirer {
             config,
             handle,
             page,
-            handle_event_response_received,
-            handle_event_response_received_extra_info,
         })
     }
 
@@ -201,8 +203,6 @@ impl Acquirer {
         self.browser.close().await?;
 
         self.handle.await;
-        self.handle_event_response_received.await;
-        self.handle_event_response_received_extra_info.await;
 
         Ok(())
     }
