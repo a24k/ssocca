@@ -25,6 +25,8 @@ pub struct Acquirer {
     config: AcquirerConfig,
     handle: JoinHandle<()>,
     page: Page,
+    handle_event_response_received: JoinHandle<()>,
+    handle_event_response_received_extra_info: JoinHandle<()>,
 }
 
 impl Acquirer {
@@ -39,7 +41,7 @@ impl Acquirer {
         page.wait_for_navigation().await?;
 
         let mut events = page.event_listener::<EventResponseReceived>().await?;
-        let _ = task::spawn(async move {
+        let handle_event_response_received = task::spawn(async move {
             while let Some(event) = events.next().await {
                 println!("EventResponseReceived: {:?}", event);
             }
@@ -49,12 +51,10 @@ impl Acquirer {
         let mut events = page
             .event_listener::<EventResponseReceivedExtraInfo>()
             .await?;
-        let _ = task::spawn(async move {
+        let handle_event_response_received_extra_info = task::spawn(async move {
             while let Some(event) = events.next().await {
                 println!("EventResponseReceivedExtraInfo: {:?}", event);
             }
-            // TODO: should wait before exit
-            task::sleep(Duration::from_millis(500)).await;
             debug!("EventResponseReceivedExtraInfo: closed.");
         });
 
@@ -66,6 +66,8 @@ impl Acquirer {
             config,
             handle,
             page,
+            handle_event_response_received,
+            handle_event_response_received_extra_info,
         })
     }
 
@@ -199,6 +201,8 @@ impl Acquirer {
         self.browser.close().await?;
 
         self.handle.await;
+        self.handle_event_response_received.await;
+        self.handle_event_response_received_extra_info.await;
 
         Ok(())
     }
