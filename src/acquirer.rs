@@ -10,7 +10,7 @@ use regex::Regex;
 use std::time::Duration;
 
 use chromiumoxide::cdp::browser_protocol::network::{Cookie, EventResponseReceivedExtraInfo};
-use chromiumoxide::cdp::browser_protocol::page::{NavigateParams, EventLifecycleEvent};
+use chromiumoxide::cdp::browser_protocol::page::{EventLifecycleEvent, NavigateParams};
 use chromiumoxide::page::Page;
 use chromiumoxide::{browser::Browser, cdp::browser_protocol::network::EventResponseReceived};
 
@@ -56,9 +56,7 @@ impl Acquirer {
             debug!("EventResponseReceivedExtraInfo: closed.");
         });
 
-        let mut events = page
-            .event_listener::<EventLifecycleEvent>()
-            .await?;
+        let mut events = page.event_listener::<EventLifecycleEvent>().await?;
         let handle_event_lifecycle_event = task::spawn(async move {
             while let Some(event) = events.next().await {
                 debug!("EventLifecycleEvent: {:?}", event);
