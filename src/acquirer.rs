@@ -9,10 +9,10 @@ use log::{debug, info, trace, warn};
 use regex::Regex;
 use std::time::Duration;
 
-use chromiumoxide::cdp::browser_protocol::network::{Cookie, EventResponseReceivedExtraInfo};
-use chromiumoxide::cdp::browser_protocol::page::{EventLifecycleEvent, NavigateParams};
+use chromiumoxide::browser::Browser;
+use chromiumoxide::cdp::browser_protocol::network::Cookie;
+use chromiumoxide::cdp::browser_protocol::page::NavigateParams;
 use chromiumoxide::page::Page;
-use chromiumoxide::{browser::Browser, cdp::browser_protocol::network::EventResponseReceived};
 
 pub use config::AcquirerConfig;
 pub use scenario::{
@@ -37,39 +37,6 @@ impl Acquirer {
 
         let page = Self::wait_for_initial_page(&browser, config.timeout).await?;
         page.wait_for_navigation().await?;
-
-        let mut events = page.event_listener::<EventResponseReceived>().await?;
-        let handle_event_response_received = task::spawn(async move {
-            while let Some(event) = events.next().await {
-                debug!("EventResponseReceived: {:?}", event);
-            }
-            debug!("EventResponseReceived: closed.");
-        });
-
-        let mut events = page
-            .event_listener::<EventResponseReceivedExtraInfo>()
-            .await?;
-        let handle_event_response_received_extra_info = task::spawn(async move {
-            while let Some(event) = events.next().await {
-                debug!("EventResponseReceivedExtraInfo: {:?}", event);
-            }
-            debug!("EventResponseReceivedExtraInfo: closed.");
-        });
-
-        let mut events = page.event_listener::<EventLifecycleEvent>().await?;
-        let handle_event_lifecycle_event = task::spawn(async move {
-            while let Some(event) = events.next().await {
-                debug!("EventLifecycleEvent: {:?}", event);
-            }
-            debug!("EventLifecycleEvent: closed.");
-        });
-
-        let handle = task::spawn(async move {
-            handle.await;
-            handle_event_response_received.await;
-            handle_event_response_received_extra_info.await;
-            handle_event_lifecycle_event.await;
-        });
 
         debug!("{:?}", browser);
         debug!("{:?}", browser.version().await?);
