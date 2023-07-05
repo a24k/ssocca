@@ -9,10 +9,10 @@ Credential Cookie Acquirer for SSO Authentication Flow works with Google Chrome.
 ```
 SSO Credential Cookie Acquirer
 
-Usage: ssocca [OPTIONS] <URL>
+Usage: ssocca [OPTIONS] [TOML]
 
 Arguments:
-  <URL>  Url to initiate authentication
+  [TOML]  Specify path to a configuration file
 
 Options:
   -l, --headless       Use browser in headless mode
@@ -20,6 +20,8 @@ Options:
   -q, --quiet...       Less output per occurrence
       --chrome <PATH>  Specify path to a Chrome executable
       --timeout <SEC>  Timeout duration in secs [default: 10]
+      --cookie <NAME>  Cookie name to acquire
+      --url <URL>      Url to initiate authentication
   -h, --help           Print help
   -V, --version        Print version
 ```

@@ -133,7 +133,11 @@ impl Acquirer {
             .unwrap();
 
         let element = self.page.find_element(&totp.to).await?;
-        element.click().await?.type_str(generator.generate()).await?;
+        element
+            .click()
+            .await?
+            .type_str(generator.generate())
+            .await?;
         Ok(())
     }
 
