@@ -4,12 +4,12 @@ use std::time::Duration;
 
 use super::{Acquirer, Scenario};
 
-pub async fn run(acquirer: &Acquirer, scenario: &Scenario) -> anyhow::Result<()> {
+pub async fn run(acquirer: &Acquirer, scenario: Scenario) -> anyhow::Result<()> {
     // Start
     acquirer.navigate(&scenario.start.0).await?;
 
     // Finish
-    let mut cookeys = scenario.finish.with.clone();
+    let mut cookeys = scenario.finish.with;
     while !cookeys.is_empty() {
         task::sleep(Duration::from_millis(500)).await;
 

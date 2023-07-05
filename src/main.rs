@@ -12,11 +12,8 @@ use args::Args;
 fn main() -> ExitCode {
     async fn main(args: &Args) -> anyhow::Result<()> {
         let scenario = Scenario::build(args).await?;
-
         let acquirer = Acquirer::launch(AcquirerConfig::build(args)?).await?;
-
-        runner::run(&acquirer, &scenario).await?;
-
+        runner::run(&acquirer, scenario).await?;
         acquirer.close().await
     }
 
@@ -28,6 +25,7 @@ fn main() -> ExitCode {
     logger::init_with_verbosity(&args.verbosity);
 
     let result = task::block_on(async { main(&args).await });
+
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(err) => {
