@@ -1,55 +1,79 @@
-#[allow(dead_code)]
+pub mod rule;
+
+use anyhow::{anyhow, Context as _};
+use async_std::fs;
+use serde::{Deserialize, Serialize};
+
+use crate::args::Args;
+
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub struct Scenario {
-    rules: Vec<rule::Rule>,
+    pub start: rule::Start,
+    #[serde(default)]
+    pub rules: Vec<rule::Rule>,
+    #[serde(default)]
+    pub finish: rule::Finish,
 }
 
-pub mod rule {
-    use chromiumoxide::cdp::browser_protocol::page::NavigateParams;
-
-    #[allow(dead_code)]
-    pub enum Rule {
-        Start(Start),
-        Input(Input),
-        Totp(Totp),
-        Click(Click),
-        Finish(Finish),
+impl Scenario {
+    pub async fn build(args: &Args) -> anyhow::Result<Scenario> {
+        Self::override_with_args(
+            match &args.toml {
+                Some(toml) => Self::build_from_toml(fs::read_to_string(toml).await?),
+                None => Err(anyhow!("Found no toml configuration.")),
+            },
+            args,
+        )
     }
 
-    #[allow(dead_code)]
-    pub struct Start {
-        pub goto: NavigateParams,
+    fn build_from_toml(toml: String) -> anyhow::Result<Scenario> {
+        toml::from_str(&toml).map_err(|e| anyhow!(e))
     }
 
-    type UrlPattern = String;
-    type CssSelector = String;
+    fn override_with_args(
+        scenario: anyhow::Result<Scenario>,
+        args: &Args,
+    ) -> anyhow::Result<Scenario> {
+        let start = match &args.url {
+            Some(url) => Ok(rule::Start(url.into())),
+            None => scenario.as_ref().map_or_else(
+                |error| {
+                    Err(anyhow!("{error}")).context("Found no toml configuration or url option.")
+                },
+                |scenario| Ok(scenario.start.clone()),
+            ),
+        }?;
 
-    #[allow(dead_code)]
-    pub struct Input {
-        pub on: Option<UrlPattern>,
-        pub to: CssSelector,
-        pub value: String,
-    }
+        let rules = scenario
+            .as_ref()
+            .map_or_else(|_| vec![], |scenario| scenario.rules.clone());
 
-    #[allow(dead_code)]
-    pub struct Totp {
-        pub on: Option<UrlPattern>,
-        pub to: CssSelector,
-        pub seed: String,
-    }
+        let finish = {
+            let on = scenario
+                .as_ref()
+                .map_or(None, |scenario| scenario.finish.on.clone());
 
-    #[allow(dead_code)]
-    pub struct Click {
-        pub on: Option<UrlPattern>,
-        pub to: CssSelector,
-    }
+            let with = scenario.as_ref().map_or_else(
+                |_| args.cookie.clone(),
+                |scenario| {
+                    scenario
+                        .finish
+                        .with
+                        .clone()
+                        .into_iter()
+                        .chain(args.cookie.clone().into_iter())
+                        .collect()
+                },
+            );
 
-    type CookieKey = String;
-    type CookieDomain = String;
+            rule::Finish { on, with }
+        };
 
-    #[allow(dead_code)]
-    pub struct Finish {
-        pub on: Option<CookieDomain>,
-        pub with: Vec<CookieKey>,
+        Ok(Scenario {
+            start,
+            rules,
+            finish,
+        })
     }
 }
 
@@ -57,43 +81,111 @@ pub mod rule {
 mod tests {
     use rstest::*;
 
-    use super::rule::*;
+    use super::*;
+    use crate::{args, args::Args};
 
     #[rstest]
     #[case(
-        "https://example.com",
-        Start { goto: "https://example.com".into() },
+        Scenario {
+            start: rule::Start("https://example.com".into()),
+            rules: vec![],
+            finish: rule::Finish { on: None, with: vec![] },
+        },
+        r#"[start]
+           url = "https://example.com""#,
     )]
-    fn start(#[case] expected: &str, #[case] rule: Start) {
-        assert_eq!(expected, rule.goto.url);
-        assert_eq!(None, rule.goto.referrer);
-        assert_eq!(None, rule.goto.transition_type);
-        assert_eq!(None, rule.goto.frame_id);
-        assert_eq!(None, rule.goto.referrer_policy);
+    #[case(
+        Scenario {
+            start: rule::Start("https://example.com".into()),
+            rules: vec![
+                rule::Rule::Input(rule::Input {
+                    on: None,
+                    to: "selector01".into(),
+                    value: "value01".into(),
+                }),
+                rule::Rule::Input(rule::Input {
+                    on: None,
+                    to: "selector02".into(),
+                    value: "value02".into(),
+                }),
+            ],
+            finish: rule::Finish {
+                on: None,
+                with: vec!["cookey01".into(), "cookey02".into()]
+            },
+        },
+        r#"[start]
+           url = "https://example.com"
+
+           [[rules]]
+           type = "input"
+           to = "selector01"
+           value = "value01"
+
+           [[rules]]
+           type = "input"
+           to = "selector02"
+           value = "value02"
+
+           [finish]
+           with = ["cookey01", "cookey02"]"#,
+    )]
+    fn build_from_toml(#[case] expected: Scenario, #[case] toml: String) {
+        assert_eq!(expected, Scenario::build_from_toml(toml).unwrap());
     }
 
     #[rstest]
     #[case(
-        vec!["cookey"],
-        None,
-        Finish { with: vec!["cookey".into()], on: None },
+        Scenario {
+            start: rule::Start("https://example.org".into()),
+            rules: vec![],
+            finish: rule::Finish { on: None, with: vec![] },
+        },
+        r#"[start]
+           url = "https://example.com""#,
+        args!("--url", "https://example.org"),
     )]
     #[case(
-        vec!["cookey1", "cookey2"],
-        None,
-        Finish { with: vec!["cookey1".into(), "cookey2".into()], on: None },
+        Scenario {
+            start: rule::Start("https://example.org".into()),
+            rules: vec![
+                rule::Rule::Input(rule::Input {
+                    on: None,
+                    to: "selector01".into(),
+                    value: "value01".into(),
+                }),
+                rule::Rule::Input(rule::Input {
+                    on: None,
+                    to: "selector02".into(),
+                    value: "value02".into(),
+                }),
+            ],
+            finish: rule::Finish {
+                on: None,
+                with: vec!["cookey01".into(), "cookey02".into(), "cookey03".into()]
+            },
+        },
+        r#"[start]
+           url = "https://example.com"
+
+           [[rules]]
+           type = "input"
+           to = "selector01"
+           value = "value01"
+
+           [[rules]]
+           type = "input"
+           to = "selector02"
+           value = "value02"
+
+           [finish]
+           with = ["cookey01", "cookey02"]"#,
+        args!("--url", "https://example.org", "--cookie", "cookey03"),
     )]
-    #[case(
-        vec!["cookey1", "cookey2"],
-        Some("example.com"),
-        Finish { with: vec!["cookey1".into(), "cookey2".into()], on: Some("example.com".into()) },
-    )]
-    fn finish(
-        #[case] expected_with: Vec<&str>,
-        #[case] expected_on: Option<&str>,
-        #[case] rule: Finish,
-    ) {
-        assert_eq!(expected_with, rule.with);
-        assert_eq!(expected_on.map(|str| str.into()), rule.on);
+    fn override_with_args(#[case] expected: Scenario, #[case] toml: String, #[case] args: Args) {
+        assert_eq!(
+            expected,
+            Scenario::override_with_args(Scenario::build_from_toml(toml), &args).unwrap()
+        );
     }
 }

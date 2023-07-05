@@ -1,17 +1,25 @@
 pub mod config;
 pub mod scenario;
+pub mod runner;
 
-use anyhow::Context as _;
+use anyhow::{anyhow, Context as _};
 use async_std::{future, task, task::JoinHandle};
+use boringauth::oath::{HashFunction, TOTPBuilder};
 use futures::StreamExt;
 use log::{debug, info, trace, warn};
+use regex::Regex;
 use std::time::Duration;
 
 use chromiumoxide::browser::Browser;
 use chromiumoxide::cdp::browser_protocol::network::Cookie;
+use chromiumoxide::cdp::browser_protocol::page::NavigateParams;
 use chromiumoxide::page::Page;
 
 pub use config::AcquirerConfig;
+pub use scenario::{
+    rule::{Click, Input, Rule, Totp, UrlPattern},
+    Scenario,
+};
 
 pub struct Acquirer {
     browser: Browser,
@@ -72,20 +80,75 @@ impl Acquirer {
         }
     }
 
-    pub async fn navigate(&self, url: &str) -> anyhow::Result<()> {
-        async fn _navigate(page: &Page, url: &str) -> anyhow::Result<()> {
-            page.goto(url).await?;
+    pub async fn navigate(&self, to: &NavigateParams) -> anyhow::Result<()> {
+        async fn _navigate(page: &Page, to: &NavigateParams) -> anyhow::Result<()> {
+            page.goto(to.clone()).await?;
 
             page.wait_for_navigation()
                 .await
-                .with_context(|| format!("Failed to navigate url = {url}"))?;
+                .with_context(|| format!("Failed to navigate url = {:?}", to))?;
 
             Ok(())
         }
 
-        future::timeout(self.config.timeout, _navigate(&self.page, url))
+        future::timeout(self.config.timeout, _navigate(&self.page, to))
             .await
-            .with_context(|| format!("Timeout to navigate url = {url}"))?
+            .with_context(|| format!("Timeout to navigate url = {to:?}"))?
+    }
+
+    async fn is_on(&self, on: Option<&UrlPattern>) -> anyhow::Result<()> {
+        match on {
+            Some(on) => match self.page.url().await {
+                Ok(Some(url)) => {
+                    let re = Regex::new(on)?;
+                    match re.is_match(&url) {
+                        true => Ok(()),
+                        false => Err(anyhow!(
+                            "Skip rule because the page({url}) doesn't match url rule."
+                        )),
+                    }
+                }
+                Ok(None) | Err(_) => Err(anyhow!("Skip rule because the page has no url.")),
+            },
+            None => Ok(()),
+        }
+    }
+
+    pub async fn fillin(&self, input: &Input) -> anyhow::Result<()> {
+        self.is_on(input.on.as_ref()).await?;
+
+        let element = self.page.find_element(&input.to).await?;
+        element.click().await?.type_str(&input.value).await?;
+        Ok(())
+    }
+
+    pub async fn totp(&self, totp: &Totp) -> anyhow::Result<()> {
+        self.is_on(totp.on.as_ref()).await?;
+
+        #[allow(deprecated)]
+        let generator = TOTPBuilder::new()
+            .base32_key(&totp.seed)
+            .output_len(6)
+            .hash_function(HashFunction::Sha1)
+            .finalize()
+            .unwrap();
+
+        let element = self.page.find_element(&totp.to).await?;
+        element
+            .click()
+            .await?
+            .type_str(generator.generate())
+            .await?;
+        Ok(())
+    }
+
+    pub async fn click(&self, click: &Click) -> anyhow::Result<()> {
+        self.is_on(click.on.as_ref()).await?;
+
+        let element = self.page.find_element(&click.to).await?;
+        element.click().await?;
+        //self.page.wait_for_navigation().await?;
+        Ok(())
     }
 
     pub async fn cookies(&self) -> anyhow::Result<Vec<Cookie>> {
@@ -100,14 +163,17 @@ impl Acquirer {
         Ok(cookies)
     }
 
-    pub async fn acquire(&self, cookie: &String) -> anyhow::Result<Option<Cookie>> {
+    pub async fn acquire(&self, cookeys: &[String]) -> anyhow::Result<Vec<Cookie>> {
         let cookies = self.cookies().await?;
 
-        let found = cookies.iter().find(|c| c.name.eq(cookie));
+        let found: Vec<Cookie> = cookies
+            .into_iter()
+            .filter(|cookie| cookeys.contains(&cookie.name))
+            .collect();
 
         info!("Found {found:?}");
 
-        Ok(found.cloned())
+        Ok(found)
     }
 
     pub async fn close(mut self) -> anyhow::Result<()> {
@@ -130,7 +196,7 @@ mod tests {
     #[rstest]
     #[case("https://example.com/")]
     async fn incognito(#[case] url: &str) {
-        let args = args!["--headless", url];
+        let args = args!["--headless", "--url", url, "dummy.toml"];
         let acquirer = Acquirer::launch(AcquirerConfig::build(&args).unwrap())
             .await
             .unwrap();
@@ -142,11 +208,12 @@ mod tests {
     #[should_panic(expected = "Timeout to navigate url")]
     #[case("nowhere")]
     async fn navigate(#[case] url: &str) {
-        let args = args!["--timeout", "5", "--headless", url];
+        let args = args!["--timeout", "5", "--headless", "--url", url, "dummy.toml"];
         let acquirer = Acquirer::launch(AcquirerConfig::build(&args).unwrap())
             .await
             .unwrap();
-        acquirer.navigate(&args.url).await.unwrap();
+        let Some(url) = args.url else { panic!() };
+        acquirer.navigate(&(url).into()).await.unwrap();
         acquirer.close().await.unwrap();
     }
 }
