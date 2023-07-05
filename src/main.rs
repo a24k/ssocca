@@ -3,11 +3,10 @@ mod args;
 mod logger;
 
 use async_std::task;
-use log::{error, warn};
+use log::error;
 use std::process::ExitCode;
-use std::time::Duration;
 
-use acquirer::{Acquirer, AcquirerConfig, Scenario};
+use acquirer::{runner, Acquirer, AcquirerConfig, Scenario};
 use args::Args;
 
 fn main() -> ExitCode {
@@ -16,37 +15,7 @@ fn main() -> ExitCode {
 
         let acquirer = Acquirer::launch(AcquirerConfig::build(args)?).await?;
 
-        // Start
-        acquirer.navigate(&scenario.start.0).await?;
-
-        // Finish
-        let mut cookeys = scenario.finish.with;
-        while !cookeys.is_empty() {
-            task::sleep(Duration::from_millis(500)).await;
-
-            let cookies = acquirer.acquire(&cookeys).await?;
-            let cookies_keys: Vec<String> =
-                cookies.iter().map(|cookie| cookie.name.clone()).collect();
-
-            cookeys.retain(|cookey| !cookies_keys.contains(cookey));
-
-            cookies
-                .iter()
-                .for_each(|cookie| println!("{}={}", cookie.name, cookie.value));
-
-            // Input / Totp / Click
-            for rule in &scenario.rules {
-                task::sleep(Duration::from_millis(200)).await;
-                let result = match rule {
-                    acquirer::scenario::rule::Rule::Input(input) => acquirer.fillin(input).await,
-                    acquirer::scenario::rule::Rule::Totp(totp) => acquirer.totp(totp).await,
-                    acquirer::scenario::rule::Rule::Click(click) => acquirer.click(click).await,
-                };
-                if let Err(err) = result {
-                    warn!("{:#}", err);
-                }
-            }
-        }
+        runner::run(&acquirer, &scenario).await?;
 
         acquirer.close().await
     }

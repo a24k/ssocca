@@ -1,5 +1,6 @@
 pub mod config;
 pub mod scenario;
+pub mod runner;
 
 use anyhow::{anyhow, Context as _};
 use async_std::{future, task, task::JoinHandle};
