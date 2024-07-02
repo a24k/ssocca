@@ -16,7 +16,7 @@ use chromiumoxide::{browser::Browser, cdp::browser_protocol::network::EventRespo
 
 pub use config::AcquirerConfig;
 pub use scenario::{
-    rule::{Click, Input, Rule, Totp, UrlPattern},
+    rule::{Click, Input, /*Rule,*/ Totp, UrlPattern},
     Scenario,
 };
 
