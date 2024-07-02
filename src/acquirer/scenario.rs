@@ -61,7 +61,7 @@ impl Scenario {
                         .with
                         .clone()
                         .into_iter()
-                        .chain(args.cookie.clone().into_iter())
+                        .chain(args.cookie.clone())
                         .collect()
                 },
             );

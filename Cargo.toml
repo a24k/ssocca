@@ -1,24 +1,24 @@
 [package]
 name = "ssocca"
-version = "0.6.0-scenario.1.0"
+version = "0.6.1-scenario.1.0"
 edition = "2021"
 license = "MIT"
 authors = ["Atsushi KAWASAKI <ak@xlix.org>"]
 description = "SSO Credential Cookie Acquirer"
 
 [dependencies]
-anyhow = "1.0.71"
+anyhow = "1.0.86"
 async-std = "1.12.0"
-chromiumoxide = "0.5.0"
-clap = { version = "4.3.3", features = ["derive"] }
-clap-verbosity-flag = "2.0.1"
-env_logger = "0.10.0"
-futures = "0.3.28"
-log = "0.4.19"
-serde = { version = "1.0.164", features = ["derive"] }
-toml = "0.7.4"
-regex = "1.8.4"
+chromiumoxide = "0.6.0"
+clap = { version = "4.5.8", features = ["derive"] }
+clap-verbosity-flag = "2.2.0"
+env_logger = "0.11.3"
+futures = "0.3.30"
+log = "0.4.22"
+serde = { version = "1.0.203", features = ["derive"] }
+toml = "0.8.14"
+regex = "1.10.5"
 boringauth = "0.9.0"
 
 [dev-dependencies]
-rstest = "0.17.0"
+rstest = "0.21.0"
